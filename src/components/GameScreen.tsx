@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameInput, type InputMode } from "../hooks/useGameInput";
 import { useGameState } from "../hooks/useGameState";
 import { sfx } from "../lib/audio";
-import { formatNumber, formatPps, formatTime } from "../lib/format";
+import { formatNumber, formatTime } from "../lib/format";
 import { api, sendInput } from "../lib/ipc";
 import type { GameEvent, GameOverInfo, Settings, SubmitResult } from "../lib/types";
 import { BoardCanvas } from "./BoardCanvas";
@@ -30,7 +30,7 @@ const POPUP_MS = 1300;
 const GAME_GRID =
   "relative grid h-full w-full grid-cols-[200px_minmax(0,1fr)_220px] gap-4.5 p-4.5 max-[1000px]:grid-cols-[170px_minmax(0,1fr)_190px] max-[1000px]:gap-3 max-[1000px]:p-3";
 const PANEL = "flex min-h-0 flex-col gap-3";
-const CARD = "rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3";
+const CARD = "border border-white/10 px-3.5 py-3";
 const STAT_LABEL = "text-[11px] uppercase tracking-[0.12em] text-muted";
 const STAT_VALUE = "font-mono font-bold tabular-nums";
 
@@ -139,11 +139,7 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
   }, [snapshot?.countdownMs]);
 
   useEffect(() => {
-    if (!over) {
-      setGameOver(null);
-      setSubmitted(null);
-      return;
-    }
+    if (!over) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -165,6 +161,8 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
 
   const handleRestart = useCallback(() => {
     setPopups([]);
+    setGameOver(null);
+    setSubmitted(null);
     void restart();
   }, [restart]);
 
@@ -180,8 +178,6 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
     return <div className="relative grid size-full place-items-center text-muted">Starting…</div>;
 
   const showCountdown = snapshot.countdownMs !== null && !paused && !over;
-  // Tailwind v4 has no 0.4 saturate preset; the plugin's suggested
-  // `saturate-0.4` is not a valid class, so keep the arbitrary value.
   const boardDimClass = over ? "saturate-[0.4]" : "";
   const boardFlashClass = levelFlash ? "animate-level-glow" : "";
 
@@ -189,36 +185,7 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
     <div className={GAME_GRID}>
       <aside className={PANEL}>
         <section className={CARD}>
-          <h3 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
-            Hold
-          </h3>
           <PiecePreview kind={snapshot.hold} dim={!snapshot.holdAvailable} />
-        </section>
-        <section className={`${CARD} flex flex-col gap-2`}>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Score</span>
-            <span className={`${STAT_VALUE} text-[26px] text-accent`}>
-              {formatNumber(snapshot.score)}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Level</span>
-            <span className={`${STAT_VALUE} text-xl`}>{snapshot.level}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Lines</span>
-            <span className={`${STAT_VALUE} text-xl`}>{snapshot.lines}</span>
-          </div>
-          <div
-            className="h-1.5 overflow-hidden rounded-[3px] bg-white/8"
-            title={`${snapshot.linesToNextLevel} lines to next level`}
-          >
-            <div
-              className="h-full bg-linear-to-r from-accent to-accent-2 transition-[width] duration-250 ease-out"
-              style={{ width: `${(10 - snapshot.linesToNextLevel) * 10}%` }}
-            />
-          </div>
-          <span className="text-xs text-muted">{snapshot.linesToNextLevel} to next level</span>
         </section>
       </aside>
 
@@ -265,9 +232,6 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
 
       <aside className={PANEL}>
         <section className={CARD}>
-          <h3 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
-            Next
-          </h3>
           <div className="flex flex-col items-center gap-0.5">
             {snapshot.next.length === 0 && <span className="text-xs text-muted">hidden</span>}
             {snapshot.next.map((kind, i) => (
@@ -277,22 +241,26 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
         </section>
         <section className={`${CARD} flex flex-col gap-2`}>
           <div className="flex flex-col">
-            <span className={STAT_LABEL}>Time</span>
-            <span className={`${STAT_VALUE} text-xl`}>{formatTime(snapshot.elapsedMs)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Pieces</span>
-            <span className={`${STAT_VALUE} text-xl`}>{snapshot.pieces}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>PPS</span>
-            <span className={`${STAT_VALUE} text-xl`}>
-              {formatPps(snapshot.pieces, snapshot.elapsedMs)}
+            <span className={STAT_LABEL}>Score</span>
+            <span className={`${STAT_VALUE} text-[26px] text-accent`}>
+              {formatNumber(snapshot.score)}
             </span>
           </div>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Gravity</span>
-            <span className={`${STAT_VALUE} text-xl`}>{snapshot.gravityMs}ms</span>
+        </section>
+        <section className={`${CARD} flex flex-col gap-2`}>
+          <div className="flex w-full justify-between">
+            <div className="flex flex-col">
+              <span className={STAT_LABEL}>Time</span>
+              <span className={`${STAT_VALUE} text-xl`}>{formatTime(snapshot.elapsedMs)}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className={STAT_LABEL}>Level</span>
+              <span className={`${STAT_VALUE} text-xl`}>{snapshot.level}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className={STAT_LABEL}>Lines</span>
+              <span className={`${STAT_VALUE} text-xl`}>{snapshot.lines}</span>
+            </div>
           </div>
         </section>
       </aside>

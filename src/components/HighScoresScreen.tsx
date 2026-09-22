@@ -10,6 +10,11 @@ interface Props {
   onBack: () => void;
 }
 
+async function fetchHighScores(): Promise<{ scores: ScoreEntry[]; stats: Stats }> {
+  const [scores, stats] = await Promise.all([api.getHighScores(HIGH_SCORE_LIMIT), api.getStats()]);
+  return { scores, stats };
+}
+
 const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
 const BUTTON =
   "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
@@ -27,17 +32,18 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const load = async () => {
-    const [entries, aggregate] = await Promise.all([
-      api.getHighScores(HIGH_SCORE_LIMIT),
-      api.getStats(),
-    ]);
-    setScores(entries);
-    setStats(aggregate);
-  };
-
   useEffect(() => {
-    void load().catch((error) => console.error("high scores", error));
+    let cancelled = false;
+    fetchHighScores()
+      .then((loaded) => {
+        if (cancelled) return;
+        setScores(loaded.scores);
+        setStats(loaded.stats);
+      })
+      .catch((error) => console.error("high scores", error));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -51,7 +57,9 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
   const clear = async () => {
     await api.clearHighScores();
     setConfirmClear(false);
-    await load();
+    const loaded = await fetchHighScores();
+    setScores(loaded.scores);
+    setStats(loaded.stats);
   };
 
   return (

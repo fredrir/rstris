@@ -42,7 +42,7 @@ export function Menu({ items, compact = false }: Props) {
   }, [items, index]);
 
   return (
-    <ul className="m-0 flex min-w-65 list-none flex-col gap-1 p-0" role="menu">
+    <ul className="m-0 flex w-full list-none flex-col gap-1 p-0" role="menu">
       {items.map((item, i) => {
         const active = i === index;
         return (
@@ -50,11 +50,9 @@ export function Menu({ items, compact = false }: Props) {
             key={item.label}
             role="menuitem"
             className={[
-              "flex items-center gap-3 rounded-[10px] transition-[background-color,color,transform] duration-100",
+              "flex items-center gap-3 transition-[background-color,color,transform] duration-100",
               compact ? "px-3.5 py-2 text-[15px]" : "px-4 py-2.5 text-lg",
-              active
-                ? `translate-x-1 bg-white/6 ${item.danger ? "text-danger" : "text-ink"}`
-                : "text-muted",
+              active ? `translate-x-1 ${item.danger ? "text-danger" : "text-ink"}` : "text-muted",
             ].join(" ")}
             onMouseEnter={() => setIndex(i)}
             onClick={() => {

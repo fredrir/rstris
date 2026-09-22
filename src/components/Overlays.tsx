@@ -4,7 +4,7 @@ import { formatNumber, formatTime } from "../lib/format";
 import type { GameOverInfo, SubmitResult } from "../lib/types";
 import { Menu } from "./Menu";
 
-const OVERLAY = "absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center";
+const OVERLAY = "absolute inset-0 flex flex-col  justify-center gap-3.5 text-center";
 const OVERLAY_DIM = "bg-[#080a10]/78 backdrop-blur-[3px] animate-fade-in";
 const OVERLAY_TITLE = "font-mono text-[30px] font-bold tracking-[0.2em]";
 const BUTTON =
@@ -66,12 +66,7 @@ export function GameOverOverlay({
   onScores,
   onMenu,
 }: GameOverProps) {
-  const [name, setName] = useState("");
   const needsName = info !== null && info.rank !== null && !info.recorded && submitted === null;
-
-  useEffect(() => {
-    if (info) setName(info.playerName);
-  }, [info]);
 
   useEffect(() => {
     if (needsName) return;
@@ -82,11 +77,6 @@ export function GameOverOverlay({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [needsName, onMenu, onRestart]);
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    onSubmit(name.trim() || "Player");
-  };
 
   return (
     <div className={`${OVERLAY} ${OVERLAY_DIM}`}>
@@ -115,28 +105,7 @@ export function GameOverOverlay({
           </dd>
         </dl>
       )}
-      {needsName && info && (
-        <form className="flex flex-col items-center gap-2" onSubmit={submit}>
-          <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
-            NEW HIGH SCORE · #{info.rank}
-          </p>
-          <label className="text-xs text-muted" htmlFor="player-name">
-            Enter your name
-          </label>
-          <input
-            className="w-50 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-center font-mono text-lg outline-none select-text focus:border-accent"
-            id="player-name"
-            autoFocus
-            maxLength={16}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onFocus={(event) => event.target.select()}
-          />
-          <button type="submit" className={BUTTON_PRIMARY}>
-            Save score
-          </button>
-        </form>
-      )}
+      {needsName && info && <NewHighScoreForm info={info} onSubmit={onSubmit} />}
       {!needsName && info && (
         <>
           {submitted && info.rank !== null && (
@@ -156,5 +125,43 @@ export function GameOverOverlay({
       )}
       {!info && <p className="m-0 text-muted">Saving…</p>}
     </div>
+  );
+}
+
+function NewHighScoreForm({
+  info,
+  onSubmit,
+}: {
+  info: GameOverInfo;
+  onSubmit: (name: string) => void;
+}) {
+  const [name, setName] = useState(info.playerName);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    onSubmit(name.trim() || "Player");
+  };
+
+  return (
+    <form className="flex flex-col items-center gap-2" onSubmit={submit}>
+      <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
+        NEW HIGH SCORE #{info.rank}
+      </p>
+      <label className="text-xs text-muted" htmlFor="player-name">
+        Enter your name
+      </label>
+      <input
+        className="w-50 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-center font-mono text-lg outline-none select-text focus:border-accent"
+        id="player-name"
+        autoFocus
+        maxLength={16}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        onFocus={(event) => event.target.select()}
+      />
+      <button type="submit" className={BUTTON_PRIMARY}>
+        Save score
+      </button>
+    </form>
   );
 }

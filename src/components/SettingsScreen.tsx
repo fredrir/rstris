@@ -4,7 +4,6 @@ import type { Settings } from "../lib/types";
 
 interface Props {
   settings: Settings;
-  dbPath: string;
   onChange: (settings: Settings) => void;
   onReset: () => void;
   onBack: () => void;
@@ -16,15 +15,15 @@ interface Capture {
 }
 
 const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
-const CARD = "rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3";
+const CARD = "border border-white/10 px-3.5 py-3";
 const H3 = "mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted";
 const BUTTON =
-  "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10";
+  "cursor-pointer border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10";
 const BUTTON_GHOST = `${BUTTON} border-white/10`;
 const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
 const BUTTON_DANGER = `${BUTTON} border-danger/50 text-danger`;
 
-export function SettingsScreen({ settings, dbPath, onChange, onReset, onBack }: Props) {
+export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
   const [capture, setCapture] = useState<Capture | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -92,7 +91,7 @@ export function SettingsScreen({ settings, dbPath, onChange, onReset, onBack }: 
           <h3 className={H3}>Player</h3>
           <Row label="Name">
             <input
-              className="w-50 rounded-lg border border-white/10 bg-white/6 px-2.5 py-1.5 outline-none select-text focus:border-accent"
+              className="w-50 border-0 border-b border-b-white/10 px-2.5 py-1.5 select-text focus:border-b-accent focus:ring-0 focus:outline-none"
               maxLength={16}
               value={settings.playerName}
               onChange={(event) => set("playerName", event.target.value)}
@@ -198,7 +197,7 @@ export function SettingsScreen({ settings, dbPath, onChange, onReset, onBack }: 
                       <button
                         key={slot}
                         className={[
-                          "min-w-[82px] cursor-pointer rounded-md border bg-white/5 px-2.5 py-1.25 font-mono",
+                          "min-w-20.5 cursor-pointer rounded-md border bg-white/5 px-2.5 py-1.25 font-mono",
                           active
                             ? "animate-pulse-fast border-accent text-accent"
                             : `border-white/10 ${code ? "" : "text-muted"}`,
@@ -215,8 +214,6 @@ export function SettingsScreen({ settings, dbPath, onChange, onReset, onBack }: 
           </div>
         </section>
       </div>
-
-      <footer className="text-xs text-muted">{dbPath}</footer>
     </div>
   );
 }

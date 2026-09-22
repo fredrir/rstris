@@ -17,7 +17,3 @@ export function formatDate(iso: string): string {
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-export function formatPps(pieces: number, elapsedMs: number): string {
-  if (elapsedMs <= 0) return "0.00";
-  return (pieces / (elapsedMs / 1000)).toFixed(2);
-}

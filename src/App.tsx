@@ -16,7 +16,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
   const [settingsOverGame, setSettingsOverGame] = useState(false);
   const [highlightId, setHighlightId] = useState<number | null>(null);
-  const [dbPath, setDbPath] = useState("");
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
   const saveSequence = useRef(0);
@@ -26,7 +25,6 @@ export default function App() {
       .getSettings()
       .then(setSettings)
       .catch((e) => setError(String(e)));
-    api.getDbPath().then(setDbPath).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -80,7 +78,6 @@ export default function App() {
   const settingsView = (
     <SettingsScreen
       settings={settings}
-      dbPath={dbPath}
       onChange={updateSettings}
       onReset={resetSettings}
       onBack={() => (screen === "game" ? setSettingsOverGame(false) : setScreen("menu"))}
