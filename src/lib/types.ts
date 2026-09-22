@@ -121,21 +121,6 @@ export interface ScoreEntry extends GameSummary {
   playedAt: string;
 }
 
-export interface Stats {
-  games: number;
-  totalScore: number;
-  bestScore: number;
-  totalLines: number;
-  bestLines: number;
-  totalTimeMs: number;
-  totalPieces: number;
-  highestLevel: number;
-  tetrises: number;
-  tspins: number;
-  perfectClears: number;
-  bestCombo: number;
-}
-
 export interface GameOverInfo {
   summary: GameSummary;
   rank: number | null;
@@ -153,4 +138,3 @@ export const BOARD_HEIGHT = 20;
 export const HIDDEN_ROWS = 4;
 export const HIGH_SCORE_LIMIT = 10;
 export const CLEAR_ANIMATION_MS = 280;
-export const COUNTDOWN_MS = 1500;

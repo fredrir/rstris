@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::db::{HIGH_SCORE_LIMIT, ScoreEntry, Stats};
+use crate::db::{HIGH_SCORE_LIMIT, ScoreEntry};
 use crate::error::{AppError, AppResult};
 use crate::game::{Game, GameSummary, InputAction, Snapshot};
 use crate::settings::{Settings, normalize_name};
@@ -58,11 +58,6 @@ pub fn clear_high_scores(state: State<'_, AppState>) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub fn get_stats(state: State<'_, AppState>) -> AppResult<Stats> {
-    state.db().stats()
-}
-
-#[tauri::command]
 pub fn new_game(state: State<'_, AppState>) -> AppResult<Snapshot> {
     let config = state.settings().game_config();
     let mut game = Game::new(config);
@@ -77,11 +72,6 @@ pub fn game_input(state: State<'_, AppState>, action: InputAction) -> AppResult<
         game.apply(action);
     }
     Ok(())
-}
-
-#[tauri::command]
-pub fn get_game_state(state: State<'_, AppState>) -> AppResult<Option<Snapshot>> {
-    Ok(state.game().as_mut().map(Game::snapshot))
 }
 
 #[tauri::command]
@@ -149,11 +139,6 @@ pub fn submit_score(state: State<'_, AppState>, name: String) -> AppResult<Submi
         state.db().save_settings(&settings)?;
     }
     Ok(SubmitResult { id, rank })
-}
-
-#[tauri::command]
-pub fn get_db_path(state: State<'_, AppState>) -> AppResult<String> {
-    Ok(state.db_path().display().to_string())
 }
 
 #[tauri::command]

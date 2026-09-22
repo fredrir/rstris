@@ -7,7 +7,6 @@ import type {
   ScoreEntry,
   Settings,
   Snapshot,
-  Stats,
   SubmitResult,
 } from "./types";
 
@@ -17,14 +16,11 @@ export const api = {
   resetSettings: () => invoke<Settings>("reset_settings"),
   getHighScores: (limit?: number) => invoke<ScoreEntry[]>("get_high_scores", { limit }),
   clearHighScores: () => invoke<void>("clear_high_scores"),
-  getStats: () => invoke<Stats>("get_stats"),
   newGame: () => invoke<Snapshot>("new_game"),
   gameInput: (action: InputAction) => invoke<void>("game_input", { action }),
-  getGameState: () => invoke<Snapshot | null>("get_game_state"),
   endGame: () => invoke<void>("end_game"),
   gameOverInfo: () => invoke<GameOverInfo>("game_over_info"),
   submitScore: (name: string) => invoke<SubmitResult>("submit_score", { name }),
-  getDbPath: () => invoke<string>("get_db_path"),
   quit: () => invoke<void>("quit"),
 };
 

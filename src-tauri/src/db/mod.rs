@@ -1,6 +1,5 @@
 pub mod scores;
 pub mod settings;
-pub mod stats;
 
 use std::path::Path;
 
@@ -10,7 +9,6 @@ use rusqlite_migration::{M, Migrations};
 use crate::error::AppResult;
 
 pub use scores::ScoreEntry;
-pub use stats::Stats;
 
 pub const HIGH_SCORE_LIMIT: usize = 10;
 

@@ -10,8 +10,6 @@ export type SfxName =
   | "tspin"
   | "levelUp"
   | "gameOver"
-  | "pause"
-  | "resume"
   | "menuMove"
   | "menuSelect"
   | "countdown"
@@ -65,14 +63,6 @@ const PATTERNS: Record<SfxName, Tone[]> = {
     { freq: 330, ms: 200, wave: "sawtooth", gain: 0.18, at: 220 },
     { freq: 262, ms: 200, wave: "sawtooth", gain: 0.18, at: 440 },
     { freq: 196, ms: 500, wave: "sawtooth", gain: 0.2, at: 660, slideTo: 120 },
-  ],
-  pause: [
-    { freq: 520, ms: 60, wave: "triangle", gain: 0.16 },
-    { freq: 390, ms: 90, wave: "triangle", gain: 0.16, at: 70 },
-  ],
-  resume: [
-    { freq: 390, ms: 60, wave: "triangle", gain: 0.16 },
-    { freq: 520, ms: 90, wave: "triangle", gain: 0.16, at: 70 },
   ],
   menuMove: [{ freq: 600, ms: 25, wave: "square", gain: 0.1 }],
   menuSelect: [{ freq: 700, ms: 70, wave: "triangle", gain: 0.18, slideTo: 1100 }],

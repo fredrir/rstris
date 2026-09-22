@@ -20,7 +20,7 @@ pub fn run() {
             let path = app.path().app_data_dir()?.join(DB_FILE_NAME);
             let db = Database::open(&path)?;
             let settings = db.load_settings()?.unwrap_or_default();
-            app.manage(AppState::new(path, db, settings));
+            app.manage(AppState::new(db, settings));
             game_loop::spawn(app.handle().clone());
             Ok(())
         })
@@ -30,14 +30,11 @@ pub fn run() {
             commands::reset_settings,
             commands::get_high_scores,
             commands::clear_high_scores,
-            commands::get_stats,
             commands::new_game,
             commands::game_input,
-            commands::get_game_state,
             commands::end_game,
             commands::game_over_info,
             commands::submit_score,
-            commands::get_db_path,
             commands::quit,
         ])
         .run(tauri::generate_context!())

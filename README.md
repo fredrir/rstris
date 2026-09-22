@@ -35,7 +35,6 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 | Levels      | 1–30, 10 lines per level, guideline gravity curve, selectable start level                           |
 | Handling    | DAS, ARR, soft drop factor, lock delay (15 move resets), hold, ghost, next queue (0–6)              |
 | High scores | Top 10 with name entry, per-game stats (time, pieces, tetrises, T-spins)                            |
-| Stats       | Aggregates over all games                                                                           |
 | Settings    | Persisted, live-applied, rebindable keys (2 per action)                                             |
 | Audio       | Synthesized Web Audio SFX, volume + toggle                                                          |
 
@@ -54,12 +53,11 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 
 ## Persistence
 
-| Item              | Value                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| File              | `<app data dir>/rstris.sqlite3` (macOS: `~/Library/Application Support/com.fredrir.rstris/`) |
-| Tables            | `settings` (json blob), `scores` (one row per finished game)                                 |
-| Migrations        | `src-tauri/src/db/mod.rs`, tracked with `PRAGMA user_version`                                |
-| Path shown in app | Settings screen footer                                                                       |
+| Item       | Value                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------- |
+| File       | `<app data dir>/rstris.sqlite3` (macOS: `~/Library/Application Support/com.fredrir.rstris/`) |
+| Tables     | `settings` (json blob), `scores` (one row per finished game)                                 |
+| Migrations | `src-tauri/src/db/mod.rs`, tracked with `PRAGMA user_version`                                |
 
 ## Layout
 
@@ -67,7 +65,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
 | `app-icon.svg`               | Logo source; `bun tauri icon app-icon.svg` regenerates `src-tauri/icons/`                   |
 | `src-tauri/src/game/`        | `piece` (shapes, kicks), `board`, `bag`, `scoring`, `input` (DAS/ARR), `engine`, `snapshot` |
-| `src-tauri/src/db/`          | `scores`, `settings`, `stats`                                                               |
+| `src-tauri/src/db/`          | `scores`, `settings`                                                                        |
 | `src-tauri/src/commands.rs`  | Tauri IPC commands                                                                          |
 | `src-tauri/src/game_loop.rs` | 250 Hz update thread, emits `game-state` events                                             |
 | `src-tauri/tests/`           | Mirrors `src/` modules                                                                      |

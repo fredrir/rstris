@@ -10,8 +10,6 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
-    #[error("tauri: {0}")]
-    Tauri(#[from] tauri::Error),
     #[error("no active game")]
     NoGame,
     #[error("game not over")]

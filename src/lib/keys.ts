@@ -108,7 +108,3 @@ export function keyLabel(code: string): string {
   if (code.startsWith("Numpad")) return `Num ${code.slice(6)}`;
   return code;
 }
-
-export function keysLabel(codes: string[]): string {
-  return codes.length ? codes.map(keyLabel).join(" / ") : "—";
-}

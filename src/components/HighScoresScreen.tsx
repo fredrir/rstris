@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { cx } from "../lib/cx";
 import { formatDate, formatNumber, formatTime } from "../lib/format";
 import { api } from "../lib/ipc";
-import type { ScoreEntry, Stats } from "../lib/types";
+import type { ScoreEntry } from "../lib/types";
 import { HIGH_SCORE_LIMIT } from "../lib/types";
 import { Button } from "./ui/Button";
 import { Screen } from "./ui/Screen";
@@ -14,9 +14,8 @@ interface Props {
   onBack: () => void;
 }
 
-async function fetchHighScores(): Promise<{ scores: ScoreEntry[]; stats: Stats }> {
-  const [scores, stats] = await Promise.all([api.getHighScores(HIGH_SCORE_LIMIT), api.getStats()]);
-  return { scores, stats };
+function fetchHighScores(): Promise<ScoreEntry[]> {
+  return api.getHighScores(HIGH_SCORE_LIMIT);
 }
 
 export function HighScoresScreen({ highlightId, onBack }: Props) {
@@ -28,7 +27,7 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
     fetchHighScores()
       .then((loaded) => {
         if (cancelled) return;
-        setScores(loaded.scores);
+        setScores(loaded);
       })
       .catch((error) => console.error("high scores", error));
     return () => {
@@ -47,8 +46,7 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
   const clear = async () => {
     await api.clearHighScores();
     setConfirmClear(false);
-    const loaded = await fetchHighScores();
-    setScores(loaded.scores);
+    setScores(await fetchHighScores());
   };
 
   return (
