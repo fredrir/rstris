@@ -224,25 +224,6 @@ export function GameScreen({
             {snapshot.linesToNextLevel} to next level
           </span>
         </section>
-        <section className="card last-clear">
-          <h3>Last clear</h3>
-          {snapshot.lastClear ? (
-            <>
-              <span
-                className={`clear-label${snapshot.lastClear.spin !== "none" ? " spin" : ""}`}
-              >
-                {snapshot.lastClear.label}
-              </span>
-              <span className="stat-sub">
-                +{formatNumber(snapshot.lastClear.points)}
-                {snapshot.backToBack ? " · B2B" : ""}
-                {snapshot.combo > 0 ? ` · combo ×${snapshot.combo}` : ""}
-              </span>
-            </>
-          ) : (
-            <span className="stat-sub muted">—</span>
-          )}
-        </section>
       </aside>
 
       <main className="board-area">

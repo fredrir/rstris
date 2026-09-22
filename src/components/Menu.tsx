@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
+import { PlayIcon } from "../icons/PlayIcon";
 import { sfx } from "../lib/audio";
 
 export interface MenuItem {
   label: string;
-  hint?: string;
   danger?: boolean;
   onSelect: () => void;
 }
@@ -54,9 +54,8 @@ export function Menu({ items, compact = false }: Props) {
             item.onSelect();
           }}
         >
-          <span className="menu-caret">▸</span>
+          <PlayIcon className="menu-caret" />
           <span className="menu-label">{item.label}</span>
-          {item.hint && <span className="menu-hint">{item.hint}</span>}
         </li>
       ))}
     </ul>

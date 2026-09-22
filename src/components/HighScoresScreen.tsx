@@ -16,7 +16,10 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
   const [confirmClear, setConfirmClear] = useState(false);
 
   const load = async () => {
-    const [entries, aggregate] = await Promise.all([api.getHighScores(HIGH_SCORE_LIMIT), api.getStats()]);
+    const [entries, aggregate] = await Promise.all([
+      api.getHighScores(HIGH_SCORE_LIMIT),
+      api.getStats(),
+    ]);
     setScores(entries);
     setStats(aggregate);
   };
@@ -54,7 +57,11 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
               </button>
             </>
           ) : (
-            <button className="button" onClick={() => setConfirmClear(true)} disabled={scores.length === 0}>
+            <button
+              className="button"
+              onClick={() => setConfirmClear(true)}
+              disabled={scores.length === 0}
+            >
               Clear all
             </button>
           )}
@@ -64,9 +71,7 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
         </div>
       </header>
 
-      {scores.length === 0 ? (
-        <p className="empty">No games recorded yet. Go play one!</p>
-      ) : (
+      {scores.length === 0 ? undefined : (
         <table className="scores">
           <thead>
             <tr>
@@ -83,7 +88,10 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
           </thead>
           <tbody>
             {scores.map((entry, i) => (
-              <tr key={entry.id} className={entry.id === highlightId ? "highlight" : ""}>
+              <tr
+                key={entry.id}
+                className={entry.id === highlightId ? "highlight" : ""}
+              >
                 <td className={`rank r${i + 1}`}>{i + 1}</td>
                 <td>{entry.name}</td>
                 <td className="num">{formatNumber(entry.score)}</td>
@@ -111,11 +119,13 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
           <Stat label="Pieces" value={formatNumber(stats.totalPieces)} />
           <Stat label="Tetrises" value={formatNumber(stats.tetrises)} />
           <Stat label="T-Spins" value={formatNumber(stats.tspins)} />
-          <Stat label="Perfect clears" value={formatNumber(stats.perfectClears)} />
+          <Stat
+            label="Perfect clears"
+            value={formatNumber(stats.perfectClears)}
+          />
           <Stat label="Best combo" value={String(stats.bestCombo)} />
         </section>
       )}
-      <p className="footer-hint">Esc back</p>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import { ACTIONS, assignKey, keyLabel, type ActionId } from "../lib/keys";
 import type { Settings } from "../lib/types";
 
@@ -69,31 +68,27 @@ export function SettingsScreen({
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
     onChange({ ...settings, [key]: value });
 
+  const setReset = () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    setConfirmReset(false);
+    onReset();
+  };
+
   return (
     <div className="screen page settings">
       <header className="page-header">
         <h2>Settings</h2>
         <div className="page-actions">
-          {confirmReset ? (
-            <>
-              <button
-                className="button danger"
-                onClick={() => {
-                  onReset();
-                  setConfirmReset(false);
-                }}
-              >
-                Confirm reset
-              </button>
-              <button className="button" onClick={() => setConfirmReset(false)}>
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button className="button" onClick={() => setConfirmReset(true)}>
-              Reset defaults
-            </button>
-          )}
+          <button
+            className={confirmReset ? "button danger" : "button"}
+            onClick={setReset}
+          >
+            {confirmReset ? "Confirm reset" : "Reset"}
+          </button>
+
           <button className="button primary" onClick={onBack}>
             Back
           </button>

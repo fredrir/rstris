@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
 import { GameScreen } from "./components/GameScreen";
 import { HighScoresScreen } from "./components/HighScoresScreen";
 import { MainMenu } from "./components/MainMenu";
@@ -83,7 +82,9 @@ export default function App() {
       dbPath={dbPath}
       onChange={updateSettings}
       onReset={resetSettings}
-      onBack={() => (screen === "game" ? setSettingsOverGame(false) : setScreen("menu"))}
+      onBack={() =>
+        screen === "game" ? setSettingsOverGame(false) : setScreen("menu")
+      }
     />
   );
 
@@ -91,7 +92,6 @@ export default function App() {
     <>
       {screen === "menu" && (
         <MainMenu
-          playerName={settings.playerName}
           onPlay={() => setScreen("game")}
           onScores={() => goScores(null)}
           onSettings={() => setScreen("settings")}
@@ -106,8 +106,12 @@ export default function App() {
           onSettings={() => setSettingsOverGame(true)}
         />
       )}
-      {screen === "game" && settingsOverGame && <div className="modal">{settingsView}</div>}
-      {screen === "scores" && <HighScoresScreen highlightId={highlightId} onBack={goMenu} />}
+      {screen === "game" && settingsOverGame && (
+        <div className="modal">{settingsView}</div>
+      )}
+      {screen === "scores" && (
+        <HighScoresScreen highlightId={highlightId} onBack={goMenu} />
+      )}
       {screen === "settings" && settingsView}
     </>
   );

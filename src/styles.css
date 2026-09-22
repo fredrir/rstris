@@ -181,6 +181,9 @@ h3 {
 }
 
 .menu-caret {
+  width: 0.5em;
+  height: 0.54em;
+  flex: none;
   opacity: 0;
   color: var(--accent);
   transition: opacity 0.12s;
