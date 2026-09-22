@@ -1,4 +1,6 @@
 // @ts-check
+import { fileURLToPath } from "node:url";
+
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -8,7 +10,7 @@ import prettier from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "src-tauri/target"] },
+  { ignores: ["dist", "src-tauri/target", "tools/readme/dist", "tools/readme/node_modules"] },
 
   js.configs.recommended,
   tseslint.configs.recommended,
@@ -19,7 +21,7 @@ export default tseslint.config(
   {
     settings: {
       tailwindcss: {
-        cssConfigPath: "./src/styles.css",
+        cssConfigPath: fileURLToPath(new URL("./src/styles.css", import.meta.url)),
       },
     },
   },
@@ -33,9 +35,22 @@ export default tseslint.config(
   },
 
   {
-    files: ["*.config.{js,ts}", "vite.config.ts"],
+    files: ["*.config.{js,ts}", "vite.config.ts", "tools/readme/*.mjs"],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+
+  {
+    files: ["tools/readme/*.ts"],
+    languageOptions: {
+      globals: globals.browser,
+    },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
     },
   },
 

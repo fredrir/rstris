@@ -1,0 +1,15 @@
+{
+  "name": "rstris-readme-tools",
+  "private": true,
+  "type": "module",
+  "description": "Generates the README screenshots and gameplay clip from the real UI.",
+  "scripts": {
+    "record": "cargo run --quiet --example readme_capture --manifest-path ../../src-tauri/Cargo.toml -- public/demo.json",
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "gifenc": "^1.0.3",
+    "playwright-core": "1.63.0-alpha-2026-08-31",
+    "sharp": "^0.35.4"
+  }
+}

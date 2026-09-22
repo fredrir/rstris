@@ -3,3 +3,6 @@ node_modules
 src-tauri/gen
 src-tauri/target
 bun.lock
+tools/readme/dist
+tools/readme/public
+tools/readme/.work

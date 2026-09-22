@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.work/
+public/demo.json
+public/demo.json.gz
