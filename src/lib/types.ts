@@ -95,6 +95,7 @@ export interface Settings {
   startLevel: number;
   ghostPiece: boolean;
   holdEnabled: boolean;
+  popupsEnabled: boolean;
   nextCount: number;
   dasMs: number;
   arrMs: number;

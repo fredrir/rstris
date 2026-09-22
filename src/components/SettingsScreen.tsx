@@ -115,6 +115,13 @@ export function SettingsScreen({ settings, onChange, onAssignKey, onReset, onBac
               onChange={(v) => onChange({ holdEnabled: v })}
             />
           </FieldRow>
+          <FieldRow label="Score popups">
+            <Toggle
+              label="Score popups"
+              value={settings.popupsEnabled}
+              onChange={(v) => onChange({ popupsEnabled: v })}
+            />
+          </FieldRow>
         </Card>
 
         <Card title="Handling">

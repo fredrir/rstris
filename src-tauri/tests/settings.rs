@@ -131,6 +131,13 @@ fn patch_applies_only_present_fields() {
 }
 
 #[test]
+fn score_popups_are_off_by_default_and_toggle_via_patch() {
+    assert!(!Settings::default().popups_enabled);
+    let patch: SettingsPatch = serde_json::from_str(r#"{"popupsEnabled":true}"#).unwrap();
+    assert!(patch.apply(&Settings::default()).popups_enabled);
+}
+
+#[test]
 fn patch_values_are_clamped_to_declared_limits() {
     let limit = setting_limits()
         .into_iter()

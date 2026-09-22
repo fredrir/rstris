@@ -127,27 +127,28 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
       <main className="flex min-h-0 min-w-0">
         <BoardCanvas className={cx(levelFlash && "animate-level-glow")}>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            {popups.map((popup) => (
-              <div
-                key={popup.id}
-                className="absolute flex animate-popup flex-col items-center gap-0.5 [text-shadow:0_2px_12px_rgb(0_0_0/0.8)]"
-                style={{ willChange: "transform, opacity" }}
-              >
-                <span
-                  className={cx(
-                    "font-mono font-extrabold tracking-[0.12em]",
-                    POPUP_TONES[popup.tone],
-                  )}
+            {settings.popupsEnabled &&
+              popups.map((popup) => (
+                <div
+                  key={popup.id}
+                  className="absolute flex animate-popup flex-col items-center gap-0.5 [text-shadow:0_2px_12px_rgb(0_0_0/0.8)]"
+                  style={{ willChange: "transform, opacity" }}
                 >
-                  {popup.title}
-                </span>
-                {popup.lines.map((line) => (
-                  <span key={line} className="font-mono text-sm tracking-[0.08em] text-accent">
-                    {line}
+                  <span
+                    className={cx(
+                      "font-mono font-extrabold tracking-[0.12em]",
+                      POPUP_TONES[popup.tone],
+                    )}
+                  >
+                    {popup.title}
                   </span>
-                ))}
-              </div>
-            ))}
+                  {popup.lines.map((line) => (
+                    <span key={line} className="font-mono text-sm tracking-[0.08em] text-accent">
+                      {line}
+                    </span>
+                  ))}
+                </div>
+              ))}
           </div>
           {showCountdown && ui.countdownDigit !== null && (
             <CountdownOverlay digit={ui.countdownDigit} />

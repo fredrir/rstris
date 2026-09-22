@@ -13,6 +13,7 @@ pub struct Settings {
     pub start_level: u32,
     pub ghost_piece: bool,
     pub hold_enabled: bool,
+    pub popups_enabled: bool,
     pub next_count: usize,
     pub das_ms: u64,
     pub arr_ms: u64,
@@ -81,6 +82,7 @@ pub struct SettingsPatch {
     pub start_level: Option<u32>,
     pub ghost_piece: Option<bool>,
     pub hold_enabled: Option<bool>,
+    pub popups_enabled: Option<bool>,
     pub next_count: Option<usize>,
     pub das_ms: Option<u64>,
     pub arr_ms: Option<u64>,
@@ -98,6 +100,7 @@ impl Default for Settings {
             start_level: game.start_level,
             ghost_piece: game.ghost_piece,
             hold_enabled: game.hold_enabled,
+            popups_enabled: false,
             next_count: game.next_count,
             das_ms: game.das_ms,
             arr_ms: game.arr_ms,
@@ -247,6 +250,9 @@ impl SettingsPatch {
         }
         if let Some(value) = self.hold_enabled {
             next.hold_enabled = value;
+        }
+        if let Some(value) = self.popups_enabled {
+            next.popups_enabled = value;
         }
         if let Some(value) = self.next_count {
             next.next_count = value;
