@@ -5,12 +5,7 @@ import { useGameState } from "../hooks/useGameState";
 import { sfx } from "../lib/audio";
 import { formatNumber, formatPps, formatTime } from "../lib/format";
 import { api, sendInput } from "../lib/ipc";
-import type {
-  GameEvent,
-  GameOverInfo,
-  Settings,
-  SubmitResult,
-} from "../lib/types";
+import type { GameEvent, GameOverInfo, Settings, SubmitResult } from "../lib/types";
 import { BoardCanvas } from "./BoardCanvas";
 import { CountdownOverlay, GameOverOverlay, PauseOverlay } from "./Overlays";
 import { PiecePreview } from "./PiecePreview";
@@ -52,13 +47,7 @@ function popupTitleClass(tone: Popup["tone"]) {
   return `${size} ${color} font-mono font-extrabold tracking-[0.12em]`;
 }
 
-export function GameScreen({
-  settings,
-  inputEnabled,
-  onMenu,
-  onScores,
-  onSettings,
-}: Props) {
+export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSettings }: Props) {
   const { snapshot, restart } = useGameState();
   const [popups, setPopups] = useState<Popup[]>([]);
   const [levelFlash, setLevelFlash] = useState(false);
@@ -70,22 +59,13 @@ export function GameScreen({
   const over = snapshot?.phase.kind === "game_over";
   const paused = snapshot?.paused ?? false;
   const mode: InputMode =
-    !snapshot || !inputEnabled
-      ? "disabled"
-      : over
-        ? "over"
-        : paused
-          ? "paused"
-          : "playing";
+    !snapshot || !inputEnabled ? "disabled" : over ? "over" : paused ? "paused" : "playing";
   useGameInput(settings.keys, mode);
 
   const pushPopup = useCallback((popup: Omit<Popup, "id">) => {
     const id = ++popupId.current;
     setPopups((list) => [...list, { ...popup, id }]);
-    window.setTimeout(
-      () => setPopups((list) => list.filter((p) => p.id !== id)),
-      POPUP_MS,
-    );
+    window.setTimeout(() => setPopups((list) => list.filter((p) => p.id !== id)), POPUP_MS);
   }, []);
 
   const handleEvent = useCallback(
@@ -122,13 +102,7 @@ export function GameScreen({
                 ? "big"
                 : "normal";
           pushPopup({ title: result.label, lines, tone });
-          sfx.play(
-            result.spin !== "none"
-              ? "tspin"
-              : result.lines === 4
-                ? "tetris"
-                : "clear",
-          );
+          sfx.play(result.spin !== "none" ? "tspin" : result.lines === 4 ? "tetris" : "clear");
           break;
         }
         case "level_up":
@@ -203,19 +177,19 @@ export function GameScreen({
   }, []);
 
   if (!snapshot)
-    return (
-      <div className="relative grid h-full w-full place-items-center text-muted">
-        Starting…
-      </div>
-    );
+    return <div className="relative grid size-full place-items-center text-muted">Starting…</div>;
 
   const showCountdown = snapshot.countdownMs !== null && !paused && !over;
+  // Tailwind v4 has no 0.4 saturate preset; the plugin's suggested
+  // `saturate-0.4` is not a valid class, so keep the arbitrary value.
+  const boardDimClass = over ? "saturate-[0.4]" : "";
+  const boardFlashClass = levelFlash ? "animate-level-glow" : "";
 
   return (
     <div className={GAME_GRID}>
       <aside className={PANEL}>
         <section className={CARD}>
-          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+          <h3 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
             Hold
           </h3>
           <PiecePreview kind={snapshot.hold} dim={!snapshot.holdAvailable} />
@@ -236,27 +210,20 @@ export function GameScreen({
             <span className={`${STAT_VALUE} text-xl`}>{snapshot.lines}</span>
           </div>
           <div
-            className="h-1.5 overflow-hidden rounded-[3px] bg-white/[0.08]"
+            className="h-1.5 overflow-hidden rounded-[3px] bg-white/8"
             title={`${snapshot.linesToNextLevel} lines to next level`}
           >
             <div
-              className="h-full bg-linear-to-r from-accent to-accent-2 transition-[width] duration-[250ms] ease-out"
+              className="h-full bg-linear-to-r from-accent to-accent-2 transition-[width] duration-250 ease-out"
               style={{ width: `${(10 - snapshot.linesToNextLevel) * 10}%` }}
             />
           </div>
-          <span className="text-xs text-muted">
-            {snapshot.linesToNextLevel} to next level
-          </span>
+          <span className="text-xs text-muted">{snapshot.linesToNextLevel} to next level</span>
         </section>
       </aside>
 
       <main className="flex min-h-0 min-w-0">
-        <BoardCanvas
-          snapshot={snapshot}
-          className={`${over ? "saturate-[0.4]" : ""} ${
-            levelFlash ? "animate-level-glow" : ""
-          }`}
-        >
+        <BoardCanvas snapshot={snapshot} className={`${boardDimClass} ${boardFlashClass}`}>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {popups.map((popup) => (
               <div
@@ -265,10 +232,7 @@ export function GameScreen({
               >
                 <span className={popupTitleClass(popup.tone)}>{popup.title}</span>
                 {popup.lines.map((line) => (
-                  <span
-                    key={line}
-                    className="font-mono text-sm tracking-[0.08em] text-accent"
-                  >
+                  <span key={line} className="font-mono text-sm tracking-[0.08em] text-accent">
                     {line}
                   </span>
                 ))}
@@ -301,28 +265,20 @@ export function GameScreen({
 
       <aside className={PANEL}>
         <section className={CARD}>
-          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+          <h3 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
             Next
           </h3>
           <div className="flex flex-col items-center gap-0.5">
-            {snapshot.next.length === 0 && (
-              <span className="text-xs text-muted">hidden</span>
-            )}
+            {snapshot.next.length === 0 && <span className="text-xs text-muted">hidden</span>}
             {snapshot.next.map((kind, i) => (
-              <PiecePreview
-                key={`${i}-${kind}`}
-                kind={kind}
-                size={i === 0 ? 18 : 14}
-              />
+              <PiecePreview key={`${i}-${kind}`} kind={kind} size={i === 0 ? 18 : 14} />
             ))}
           </div>
         </section>
         <section className={`${CARD} flex flex-col gap-2`}>
           <div className="flex flex-col">
             <span className={STAT_LABEL}>Time</span>
-            <span className={`${STAT_VALUE} text-xl`}>
-              {formatTime(snapshot.elapsedMs)}
-            </span>
+            <span className={`${STAT_VALUE} text-xl`}>{formatTime(snapshot.elapsedMs)}</span>
           </div>
           <div className="flex flex-col">
             <span className={STAT_LABEL}>Pieces</span>

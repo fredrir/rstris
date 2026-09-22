@@ -19,7 +19,10 @@ export function useGameState(): { snapshot: Snapshot | null; restart: () => Prom
       if (cancelled) fn();
       else unlisten = fn;
     });
-    void api.newGame().then(apply).catch((error) => console.error("new_game", error));
+    void api
+      .newGame()
+      .then(apply)
+      .catch((error) => console.error("new_game", error));
     return () => {
       cancelled = true;
       unlisten?.();

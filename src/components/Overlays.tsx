@@ -4,10 +4,8 @@ import { formatNumber, formatTime } from "../lib/format";
 import type { GameOverInfo, SubmitResult } from "../lib/types";
 import { Menu } from "./Menu";
 
-const OVERLAY =
-  "absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center";
-const OVERLAY_DIM =
-  "bg-[#080a10]/78 backdrop-blur-[3px] animate-fade-in";
+const OVERLAY = "absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center";
+const OVERLAY_DIM = "bg-[#080a10]/78 backdrop-blur-[3px] animate-fade-in";
 const OVERLAY_TITLE = "font-mono text-[30px] font-bold tracking-[0.2em]";
 const BUTTON =
   "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
@@ -60,7 +58,14 @@ interface GameOverProps {
   onMenu: () => void;
 }
 
-export function GameOverOverlay({ info, submitted, onSubmit, onRestart, onScores, onMenu }: GameOverProps) {
+export function GameOverOverlay({
+  info,
+  submitted,
+  onSubmit,
+  onRestart,
+  onScores,
+  onMenu,
+}: GameOverProps) {
   const [name, setName] = useState("");
   const needsName = info !== null && info.rank !== null && !info.recorded && submitted === null;
 
@@ -88,25 +93,21 @@ export function GameOverOverlay({ info, submitted, onSubmit, onRestart, onScores
       <h2 className={`${OVERLAY_TITLE} text-danger`}>GAME OVER</h2>
       {info && (
         <dl className="m-0 grid grid-cols-[auto_auto] gap-x-4.5 gap-y-1">
-          <dt className="self-center text-right text-xs uppercase tracking-[0.1em] text-muted">
+          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
             Score
           </dt>
           <dd className="m-0 text-left font-mono text-lg font-bold">
             {formatNumber(info.summary.score)}
           </dd>
-          <dt className="self-center text-right text-xs uppercase tracking-[0.1em] text-muted">
+          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
             Level
           </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">
-            {info.summary.level}
-          </dd>
-          <dt className="self-center text-right text-xs uppercase tracking-[0.1em] text-muted">
+          <dd className="m-0 text-left font-mono text-lg font-bold">{info.summary.level}</dd>
+          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
             Lines
           </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">
-            {info.summary.lines}
-          </dd>
-          <dt className="self-center text-right text-xs uppercase tracking-[0.1em] text-muted">
+          <dd className="m-0 text-left font-mono text-lg font-bold">{info.summary.lines}</dd>
+          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
             Time
           </dt>
           <dd className="m-0 text-left font-mono text-lg font-bold">
@@ -115,10 +116,7 @@ export function GameOverOverlay({ info, submitted, onSubmit, onRestart, onScores
         </dl>
       )}
       {needsName && info && (
-        <form
-          className="flex flex-col items-center gap-2"
-          onSubmit={submit}
-        >
+        <form className="flex flex-col items-center gap-2" onSubmit={submit}>
           <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
             NEW HIGH SCORE · #{info.rank}
           </p>
@@ -126,7 +124,7 @@ export function GameOverOverlay({ info, submitted, onSubmit, onRestart, onScores
             Enter your name
           </label>
           <input
-            className="w-[200px] select-text rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-center font-mono text-lg outline-none focus:border-accent"
+            className="w-50 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-center font-mono text-lg outline-none select-text focus:border-accent"
             id="player-name"
             autoFocus
             maxLength={16}

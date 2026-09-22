@@ -15,8 +15,7 @@ interface Capture {
   slot: number;
 }
 
-const PAGE =
-  "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
+const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
 const CARD = "rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3";
 const H3 = "mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted";
 const BUTTON =
@@ -25,13 +24,7 @@ const BUTTON_GHOST = `${BUTTON} border-white/10`;
 const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
 const BUTTON_DANGER = `${BUTTON} border-danger/50 text-danger`;
 
-export function SettingsScreen({
-  settings,
-  dbPath,
-  onChange,
-  onReset,
-  onBack,
-}: Props) {
+export function SettingsScreen({ settings, dbPath, onChange, onReset, onBack }: Props) {
   const [capture, setCapture] = useState<Capture | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -51,21 +44,13 @@ export function SettingsScreen({
         } else if (event.code) {
           onChange({
             ...settings,
-            keys: assignKey(
-              settings.keys,
-              capture.id,
-              capture.slot,
-              event.code,
-            ),
+            keys: assignKey(settings.keys, capture.id, capture.slot, event.code),
           });
           setCapture(null);
         }
         return;
       }
-      if (
-        event.code === "Escape" &&
-        !(event.target instanceof HTMLInputElement)
-      ) {
+      if (event.code === "Escape" && !(event.target instanceof HTMLInputElement)) {
         event.preventDefault();
         event.stopPropagation();
         onBack();
@@ -90,14 +75,9 @@ export function SettingsScreen({
   return (
     <div className={PAGE}>
       <header className="flex items-center justify-between">
-        <h2 className="font-mono text-[26px] font-bold tracking-[0.16em] text-accent">
-          Settings
-        </h2>
+        <h2 className="font-mono text-[26px] font-bold tracking-[0.16em] text-accent">Settings</h2>
         <div className="flex gap-2">
-          <button
-            className={confirmReset ? BUTTON_DANGER : BUTTON_GHOST}
-            onClick={setReset}
-          >
+          <button className={confirmReset ? BUTTON_DANGER : BUTTON_GHOST} onClick={setReset}>
             {confirmReset ? "Confirm reset" : "Reset"}
           </button>
 
@@ -112,7 +92,7 @@ export function SettingsScreen({
           <h3 className={H3}>Player</h3>
           <Row label="Name">
             <input
-              className="w-[200px] select-text rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 outline-none focus:border-accent"
+              className="w-50 rounded-lg border border-white/10 bg-white/6 px-2.5 py-1.5 outline-none select-text focus:border-accent"
               maxLength={16}
               value={settings.playerName}
               onChange={(event) => set("playerName", event.target.value)}
@@ -241,13 +221,7 @@ export function SettingsScreen({
   );
 }
 
-function Row({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-1">
       <span className="text-ink">{label}</span>
@@ -270,9 +244,7 @@ function ToggleRow({
       <button
         className={[
           "inline-flex cursor-pointer items-center gap-2 rounded-full border py-1 pr-2.5 pl-1",
-          value
-            ? "border-accent/50 text-accent"
-            : "border-white/10 text-muted",
+          value ? "border-accent/50 text-accent" : "border-white/10 text-muted",
         ].join(" ")}
         role="switch"
         aria-checked={value}
@@ -299,28 +271,20 @@ interface NumberRowProps {
   onChange: (v: number) => void;
 }
 
-function NumberRow({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  unit = "",
-  onChange,
-}: NumberRowProps) {
+function NumberRow({ label, value, min, max, step = 1, unit = "", onChange }: NumberRowProps) {
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
     <Row label={label}>
       <div className="flex items-center gap-2">
         <button
-          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/[0.12]"
+          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/12"
           onClick={() => onChange(clamp(value - step))}
           aria-label={`decrease ${label}`}
         >
           −
         </button>
         <input
-          className="w-[140px] accent-accent"
+          className="w-35 accent-accent"
           type="range"
           min={min}
           max={max}
@@ -329,7 +293,7 @@ function NumberRow({
           onChange={(event) => onChange(clamp(Number(event.target.value)))}
         />
         <button
-          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/[0.12]"
+          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/12"
           onClick={() => onChange(clamp(value + step))}
           aria-label={`increase ${label}`}
         >

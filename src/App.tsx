@@ -68,18 +68,14 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7">
+      <div className="relative flex size-full flex-col gap-4.5 overflow-auto px-9 py-7">
         <h2 className="text-xl font-bold tracking-wider">Something went wrong</h2>
-        <pre className="text-danger whitespace-pre-wrap">{error}</pre>
+        <pre className="whitespace-pre-wrap text-danger">{error}</pre>
       </div>
     );
   }
   if (!settings)
-    return (
-      <div className="relative grid h-full w-full place-items-center text-muted">
-        Loading…
-      </div>
-    );
+    return <div className="relative grid size-full place-items-center text-muted">Loading…</div>;
 
   const settingsView = (
     <SettingsScreen
@@ -87,9 +83,7 @@ export default function App() {
       dbPath={dbPath}
       onChange={updateSettings}
       onReset={resetSettings}
-      onBack={() =>
-        screen === "game" ? setSettingsOverGame(false) : setScreen("menu")
-      }
+      onBack={() => (screen === "game" ? setSettingsOverGame(false) : setScreen("menu"))}
     />
   );
 
@@ -116,9 +110,7 @@ export default function App() {
           {settingsView}
         </div>
       )}
-      {screen === "scores" && (
-        <HighScoresScreen highlightId={highlightId} onBack={goMenu} />
-      )}
+      {screen === "scores" && <HighScoresScreen highlightId={highlightId} onBack={goMenu} />}
       {screen === "settings" && settingsView}
     </>
   );

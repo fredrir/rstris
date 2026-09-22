@@ -48,7 +48,8 @@ export function MenuBackdrop() {
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         drifters = drifters.map((d) => {
           const y = d.y + d.speed * dt;
-          if (y > window.innerHeight + d.size * 2) return spawn(window.innerWidth, window.innerHeight, true);
+          if (y > window.innerHeight + d.size * 2)
+            return spawn(window.innerWidth, window.innerHeight, true);
           return { ...d, y };
         });
         for (const d of drifters) {

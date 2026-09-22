@@ -20,7 +20,7 @@ const TITLE_COLORS = [
 
 export function MainMenu({ onPlay, onScores, onSettings }: Props) {
   return (
-    <div className="relative grid h-full w-full place-items-center">
+    <div className="relative grid size-full place-items-center">
       <MenuBackdrop />
       <div className="relative z-10 flex flex-col items-center gap-4.5 rounded-[20px] border border-white/10 bg-bg/70 px-16 py-11 shadow-[0_30px_80px_rgb(0_0_0/0.5)] backdrop-blur-[6px]">
         <h1 className="ml-[0.18em] flex font-mono text-7xl font-bold tracking-[0.18em]">

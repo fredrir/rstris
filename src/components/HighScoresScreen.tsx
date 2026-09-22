@@ -10,8 +10,7 @@ interface Props {
   onBack: () => void;
 }
 
-const PAGE =
-  "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
+const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
 const BUTTON =
   "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
 const BUTTON_GHOST = `${BUTTON} border-white/10`;
@@ -64,10 +63,7 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
         <div className="flex gap-2">
           {confirmClear ? (
             <>
-              <button
-                className={BUTTON_DANGER}
-                onClick={() => void clear()}
-              >
+              <button className={BUTTON_DANGER} onClick={() => void clear()}>
                 Confirm clear
               </button>
               <button className={BUTTON_GHOST} onClick={() => setConfirmClear(false)}>
@@ -106,15 +102,8 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
           </thead>
           <tbody>
             {scores.map((entry, i) => (
-              <tr
-                key={entry.id}
-                className={
-                  entry.id === highlightId ? "[&>td]:bg-accent/[0.1]" : ""
-                }
-              >
-                <td className={`${TD} w-10 font-mono ${rankClass(i)}`}>
-                  {i + 1}
-                </td>
+              <tr key={entry.id} className={entry.id === highlightId ? "[&>td]:bg-accent/10" : ""}>
+                <td className={`${TD} w-10 font-mono ${rankClass(i)}`}>{i + 1}</td>
                 <td className={TD}>{entry.name}</td>
                 <td className={TD_NUM}>{formatNumber(entry.score)}</td>
                 <td className={TD_NUM}>{entry.level}</td>
@@ -141,10 +130,7 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
           <Stat label="Pieces" value={formatNumber(stats.totalPieces)} />
           <Stat label="Tetrises" value={formatNumber(stats.tetrises)} />
           <Stat label="T-Spins" value={formatNumber(stats.tspins)} />
-          <Stat
-            label="Perfect clears"
-            value={formatNumber(stats.perfectClears)}
-          />
+          <Stat label="Perfect clears" value={formatNumber(stats.perfectClears)} />
           <Stat label="Best combo" value={String(stats.bestCombo)} />
         </section>
       )}
@@ -161,10 +147,8 @@ function rankClass(index: number) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-[10px] border border-white/10 bg-white/[0.04] px-3 py-2.5">
-      <span className="text-[11px] uppercase tracking-[0.12em] text-muted">
-        {label}
-      </span>
+    <div className="flex flex-col gap-0.5 rounded-[10px] border border-white/10 bg-white/4 px-3 py-2.5">
+      <span className="text-[11px] tracking-[0.12em] text-muted uppercase">{label}</span>
       <span className="font-mono text-lg font-bold tabular-nums">{value}</span>
     </div>
   );

@@ -39,7 +39,12 @@ export function drawCell(
     ctx.strokeStyle = color;
     ctx.lineWidth = Math.max(1, size * 0.08);
     ctx.globalAlpha = (style.alpha ?? 1) * 0.55;
-    ctx.strokeRect(x + ctx.lineWidth / 2, y + ctx.lineWidth / 2, s - ctx.lineWidth, s - ctx.lineWidth);
+    ctx.strokeRect(
+      x + ctx.lineWidth / 2,
+      y + ctx.lineWidth / 2,
+      s - ctx.lineWidth,
+      s - ctx.lineWidth,
+    );
     ctx.globalAlpha = (style.alpha ?? 1) * 0.12;
     ctx.fillStyle = color;
     ctx.fillRect(x, y, s, s);
@@ -137,7 +142,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, snapshot: Snapshot, siz
   }
 }
 
-export function setupCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D | null {
+export function setupCanvas(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+): CanvasRenderingContext2D | null {
   const dpr = window.devicePixelRatio || 1;
   const pixelWidth = Math.round(width * dpr);
   const pixelHeight = Math.round(height * dpr);
@@ -154,11 +163,46 @@ export function setupCanvas(canvas: HTMLCanvasElement, width: number, height: nu
 }
 
 export const PREVIEW_SHAPES: Record<Tetromino, Point[]> = {
-  I: [[0, 0], [1, 0], [2, 0], [3, 0]],
-  O: [[0, 0], [1, 0], [0, 1], [1, 1]],
-  T: [[1, 0], [0, 1], [1, 1], [2, 1]],
-  S: [[1, 0], [2, 0], [0, 1], [1, 1]],
-  Z: [[0, 0], [1, 0], [1, 1], [2, 1]],
-  J: [[0, 0], [0, 1], [1, 1], [2, 1]],
-  L: [[2, 0], [0, 1], [1, 1], [2, 1]],
+  I: [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [3, 0],
+  ],
+  O: [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+  ],
+  T: [
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+  ],
+  S: [
+    [1, 0],
+    [2, 0],
+    [0, 1],
+    [1, 1],
+  ],
+  Z: [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [2, 1],
+  ],
+  J: [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+  ],
+  L: [
+    [2, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+  ],
 };

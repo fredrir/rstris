@@ -47,7 +47,12 @@ export function releaseAction(id: ActionId): InputAction | null {
   return RELEASE[id] ?? null;
 }
 
-export function assignKey(keys: KeyBindings, id: ActionId, slot: number, code: string | null): KeyBindings {
+export function assignKey(
+  keys: KeyBindings,
+  id: ActionId,
+  slot: number,
+  code: string | null,
+): KeyBindings {
   const next: KeyBindings = { ...keys };
   for (const { id: other } of ACTIONS) {
     next[other] = keys[other].filter((k) => k !== code);
