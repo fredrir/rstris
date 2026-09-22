@@ -3,6 +3,7 @@ pub mod db;
 pub mod error;
 pub mod game;
 pub mod game_loop;
+pub mod meta;
 pub mod settings;
 pub mod state;
 
@@ -26,14 +27,16 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
-            commands::save_settings,
+            commands::update_settings,
+            commands::assign_key,
             commands::reset_settings,
+            commands::get_game_meta,
             commands::get_high_scores,
             commands::clear_high_scores,
             commands::new_game,
             commands::game_input,
+            commands::key_input,
             commands::end_game,
-            commands::game_over_info,
             commands::submit_score,
             commands::quit,
         ])

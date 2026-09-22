@@ -120,6 +120,19 @@ impl Tetromino {
         (3, HIDDEN_ROWS as i32 - top)
     }
 
+    /// Wire code used in snapshots: 1..=7, 0 is reserved for empty cells.
+    pub fn code(self) -> u8 {
+        match self {
+            Tetromino::I => 1,
+            Tetromino::O => 2,
+            Tetromino::T => 3,
+            Tetromino::S => 4,
+            Tetromino::Z => 5,
+            Tetromino::J => 6,
+            Tetromino::L => 7,
+        }
+    }
+
     pub fn letter(self) -> char {
         match self {
             Tetromino::I => 'I',

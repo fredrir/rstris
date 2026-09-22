@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { cx } from "../lib/cx";
-import { ACTIONS, assignKey, keyLabel, type ActionId } from "../lib/keys";
-import type { Settings } from "../lib/types";
+import { ACTIONS, keyLabel, type ActionId } from "../lib/keys";
+import { settingLimit } from "../lib/meta";
+import type { SettingKey, Settings, SettingsPatch } from "../lib/types";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { FieldRow } from "./ui/FieldRow";
@@ -11,7 +12,8 @@ import { Toggle } from "./ui/Toggle";
 
 interface Props {
   settings: Settings;
-  onChange: (settings: Settings) => void;
+  onChange: (patch: SettingsPatch) => void;
+  onAssignKey: (action: ActionId, slot: number, code: string | null) => void;
   onReset: () => void;
   onBack: () => void;
 }
@@ -21,7 +23,7 @@ interface Capture {
   slot: number;
 }
 
-export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
+export function SettingsScreen({ settings, onChange, onAssignKey, onReset, onBack }: Props) {
   const [capture, setCapture] = useState<Capture | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -33,16 +35,10 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
         if (event.code === "Escape") {
           setCapture(null);
         } else if (event.code === "Backspace" || event.code === "Delete") {
-          onChange({
-            ...settings,
-            keys: assignKey(settings.keys, capture.id, capture.slot, null),
-          });
+          onAssignKey(capture.id, capture.slot, null);
           setCapture(null);
         } else if (event.code) {
-          onChange({
-            ...settings,
-            keys: assignKey(settings.keys, capture.id, capture.slot, event.code),
-          });
+          onAssignKey(capture.id, capture.slot, event.code);
           setCapture(null);
         }
         return;
@@ -55,10 +51,7 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [capture, settings, onChange, onBack]);
-
-  const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
-    onChange({ ...settings, [key]: value });
+  }, [capture, onAssignKey, onBack]);
 
   const setReset = () => {
     if (!confirmReset) {
@@ -90,77 +83,64 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
               className="w-50 border-0 border-b border-b-white/10 px-2.5 py-1.5 select-text focus:border-b-accent focus:ring-0 focus:outline-none"
               maxLength={16}
               value={settings.playerName}
-              onChange={(event) => set("playerName", event.target.value)}
+              onChange={(event) => onChange({ playerName: event.target.value })}
             />
           </FieldRow>
         </Card>
 
         <Card title="Gameplay">
           <NumberRow
+            settingKey="startLevel"
             label="Start level"
             value={settings.startLevel}
-            min={1}
-            max={20}
-            onChange={(v) => set("startLevel", v)}
+            onChange={(v) => onChange({ startLevel: v })}
           />
           <NumberRow
+            settingKey="nextCount"
             label="Next previews"
             value={settings.nextCount}
-            min={0}
-            max={6}
-            onChange={(v) => set("nextCount", v)}
+            onChange={(v) => onChange({ nextCount: v })}
           />
           <FieldRow label="Ghost piece">
             <Toggle
               label="Ghost piece"
               value={settings.ghostPiece}
-              onChange={(v) => set("ghostPiece", v)}
+              onChange={(v) => onChange({ ghostPiece: v })}
             />
           </FieldRow>
           <FieldRow label="Hold piece">
             <Toggle
               label="Hold piece"
               value={settings.holdEnabled}
-              onChange={(v) => set("holdEnabled", v)}
+              onChange={(v) => onChange({ holdEnabled: v })}
             />
           </FieldRow>
         </Card>
 
         <Card title="Handling">
           <NumberRow
+            settingKey="dasMs"
             label="DAS"
-            unit="ms"
             value={settings.dasMs}
-            min={0}
-            max={500}
-            step={5}
-            onChange={(v) => set("dasMs", v)}
+            onChange={(v) => onChange({ dasMs: v })}
           />
           <NumberRow
+            settingKey="arrMs"
             label="ARR"
-            unit="ms"
             value={settings.arrMs}
-            min={0}
-            max={200}
-            step={5}
-            onChange={(v) => set("arrMs", v)}
+            onChange={(v) => onChange({ arrMs: v })}
           />
           <NumberRow
+            settingKey="softDropFactor"
             label="Soft drop"
-            unit="×"
             value={settings.softDropFactor}
-            min={1}
-            max={40}
-            onChange={(v) => set("softDropFactor", v)}
+            onChange={(v) => onChange({ softDropFactor: v })}
           />
           <NumberRow
+            settingKey="lockDelayMs"
             label="Lock delay"
-            unit="ms"
             value={settings.lockDelayMs}
-            min={100}
-            max={1500}
-            step={50}
-            onChange={(v) => set("lockDelayMs", v)}
+            onChange={(v) => onChange({ lockDelayMs: v })}
           />
         </Card>
 
@@ -169,17 +149,14 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
             <Toggle
               label="Sound effects"
               value={settings.soundEnabled}
-              onChange={(v) => set("soundEnabled", v)}
+              onChange={(v) => onChange({ soundEnabled: v })}
             />
           </FieldRow>
           <NumberRow
+            settingKey="soundVolume"
             label="Volume"
-            unit="%"
             value={settings.soundVolume}
-            min={0}
-            max={100}
-            step={5}
-            onChange={(v) => set("soundVolume", v)}
+            onChange={(v) => onChange({ soundVolume: v })}
           />
         </Card>
 
@@ -218,16 +195,14 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
 }
 
 interface NumberRowProps {
+  settingKey: SettingKey;
   label: string;
   value: number;
-  min: number;
-  max: number;
-  step?: number;
-  unit?: string;
   onChange: (v: number) => void;
 }
 
-function NumberRow({ label, value, min, max, step = 1, unit = "", onChange }: NumberRowProps) {
+function NumberRow({ settingKey, label, value, onChange }: NumberRowProps) {
+  const { min, max, step, unit } = settingLimit(settingKey);
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
     <FieldRow label={label}>
@@ -257,7 +232,7 @@ function NumberRow({ label, value, min, max, step = 1, unit = "", onChange }: Nu
         </Button>
         <span className="min-w-14 text-right font-mono tabular-nums">
           {value}
-          {unit}
+          {unit ?? ""}
         </span>
       </div>
     </FieldRow>

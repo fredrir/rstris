@@ -7,4 +7,5 @@ mod game {
     mod input;
     mod piece;
     mod scoring;
+    mod snapshot;
 }

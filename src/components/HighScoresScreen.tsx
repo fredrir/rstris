@@ -4,7 +4,6 @@ import { cx } from "../lib/cx";
 import { formatDate, formatNumber, formatTime } from "../lib/format";
 import { api } from "../lib/ipc";
 import type { ScoreEntry } from "../lib/types";
-import { HIGH_SCORE_LIMIT } from "../lib/types";
 import { Button } from "./ui/Button";
 import { Screen } from "./ui/Screen";
 import { Td, Th } from "./ui/Table";
@@ -15,7 +14,7 @@ interface Props {
 }
 
 function fetchHighScores(): Promise<ScoreEntry[]> {
-  return api.getHighScores(HIGH_SCORE_LIMIT);
+  return api.getHighScores();
 }
 
 export function HighScoresScreen({ highlightId, onBack }: Props) {

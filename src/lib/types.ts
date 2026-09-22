@@ -1,5 +1,4 @@
 export type Tetromino = "I" | "O" | "T" | "S" | "Z" | "J" | "L";
-export type Cell = Tetromino | null;
 export type SpinKind = "none" | "mini" | "full";
 export type Point = [number, number];
 
@@ -36,7 +35,9 @@ export interface PieceView {
 
 export interface Snapshot {
   version: number;
-  board: Cell[][];
+  boardVersion: number;
+  /** Flat row-major visible cells: 0 empty, 1..=7 tetromino. */
+  board: number[];
   active: PieceView | null;
   ghost: Point[] | null;
   hold: Tetromino | null;
@@ -87,6 +88,8 @@ export interface KeyBindings {
   pause: string[];
 }
 
+export type KeyAction = keyof KeyBindings;
+
 export interface Settings {
   playerName: string;
   startLevel: number;
@@ -100,6 +103,33 @@ export interface Settings {
   soundEnabled: boolean;
   soundVolume: number;
   keys: KeyBindings;
+}
+
+export type SettingsPatch = Partial<Omit<Settings, "keys">>;
+
+export type SettingKey =
+  "startLevel" | "nextCount" | "dasMs" | "arrMs" | "softDropFactor" | "lockDelayMs" | "soundVolume";
+
+export interface SettingLimit {
+  key: SettingKey;
+  min: number;
+  max: number;
+  step: number;
+  unit: string | null;
+}
+
+export interface PieceShape {
+  kind: Tetromino;
+  cells: Point[];
+}
+
+export interface GameMeta {
+  boardWidth: number;
+  boardHeight: number;
+  hiddenRows: number;
+  clearAnimationMs: number;
+  previewShapes: PieceShape[];
+  limits: SettingLimit[];
 }
 
 export interface GameSummary {
@@ -132,9 +162,3 @@ export interface SubmitResult {
   id: number;
   rank: number;
 }
-
-export const BOARD_WIDTH = 10;
-export const BOARD_HEIGHT = 20;
-export const HIDDEN_ROWS = 4;
-export const HIGH_SCORE_LIMIT = 10;
-export const CLEAR_ANIMATION_MS = 280;

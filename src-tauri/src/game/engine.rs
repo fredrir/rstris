@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -17,6 +18,15 @@ pub const MAX_LOCK_RESETS: u32 = 15;
 const QUEUE_LEN: usize = 7;
 const MAX_STEP: Duration = Duration::from_millis(50);
 const LOCK_PROGRESS_STEPS: u32 = 20;
+
+/// Process-wide monotonic version counter. Versions never restart when a new
+/// game is created, so stale events from a replaced game are always older than
+/// the current one.
+static NEXT_VERSION: AtomicU64 = AtomicU64::new(1);
+
+fn next_version() -> u64 {
+    NEXT_VERSION.fetch_add(1, Ordering::Relaxed)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActivePiece {
@@ -104,6 +114,7 @@ pub struct Game {
     last_clear: Option<ClearResult>,
     events: Vec<GameEvent>,
     version: u64,
+    board_version: u64,
     recorded: bool,
 }
 
@@ -135,7 +146,8 @@ impl Game {
             perfect_clears: 0,
             last_clear: None,
             events: Vec::new(),
-            version: 1,
+            version: next_version(),
+            board_version: 1,
             recorded: false,
         };
         game.spawn_next();
@@ -223,6 +235,7 @@ impl Game {
 
     pub fn set_board(&mut self, board: Board) {
         self.board = board;
+        self.board_version += 1;
         self.touch();
     }
 
@@ -264,6 +277,7 @@ impl Game {
                     }
                     _ => {
                         self.board.clear_rows(&rows);
+                        self.board_version += 1;
                         self.phase = Phase::Playing;
                         self.spawn_next();
                     }
@@ -334,12 +348,8 @@ impl Game {
         };
         Snapshot {
             version: self.version,
-            board: self
-                .board
-                .visible_rows()
-                .iter()
-                .map(|row| row.to_vec())
-                .collect(),
+            board_version: self.board_version,
+            board: self.board.visible_codes(),
             active,
             ghost,
             hold: self.hold,
@@ -596,6 +606,7 @@ impl Game {
         };
         let cells = piece.cells();
         self.board.fill(&cells, piece.kind);
+        self.board_version += 1;
         self.pieces += 1;
         self.hold_used = false;
         self.push(GameEvent::Lock);
@@ -706,7 +717,7 @@ impl Game {
     }
 
     fn touch(&mut self) {
-        self.version += 1;
+        self.version = next_version();
     }
 }
 

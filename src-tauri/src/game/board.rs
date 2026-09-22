@@ -94,6 +94,14 @@ impl Board {
         &self.cells[HIDDEN_ROWS..]
     }
 
+    /// Row-major visible cells, one byte per cell: 0 empty, 1..=7 tetromino.
+    pub fn visible_codes(&self) -> Vec<u8> {
+        self.visible_rows()
+            .iter()
+            .flat_map(|row| row.iter().map(|cell| cell.map_or(0, Tetromino::code)))
+            .collect()
+    }
+
     pub fn max_height(&self) -> usize {
         (0..HEIGHT)
             .find(|&y| self.cells[y].iter().any(Option::is_some))

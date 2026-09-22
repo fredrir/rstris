@@ -1,5 +1,5 @@
-import type { Cell, Point, Snapshot, Tetromino } from "./types";
-import { BOARD_HEIGHT, BOARD_WIDTH, CLEAR_ANIMATION_MS, HIDDEN_ROWS } from "./types";
+import { gameMeta } from "./meta";
+import type { Point, Snapshot, Tetromino } from "./types";
 
 export const COLORS: Record<Tetromino, string> = {
   I: "#22d3ee",
@@ -10,6 +10,9 @@ export const COLORS: Record<Tetromino, string> = {
   J: "#60a5fa",
   L: "#fb923c",
 };
+
+// Indexed by the wire cell code from Rust: 0 empty, 1..=7 tetromino.
+const CELL_COLORS = ["", COLORS.I, COLORS.O, COLORS.T, COLORS.S, COLORS.Z, COLORS.J, COLORS.L];
 
 const GRID = "rgba(255, 255, 255, 0.045)";
 const BOARD_BG = "#0d1019";
@@ -90,45 +93,69 @@ export function drawPiece(
   }
 }
 
-export function drawBoard(ctx: CanvasRenderingContext2D, snapshot: Snapshot, size: number): void {
-  const width = BOARD_WIDTH * size;
-  const height = BOARD_HEIGHT * size;
+/** Background, grid, and settled cells. Redrawn only when the board changes. */
+export function drawBoardStatic(
+  ctx: CanvasRenderingContext2D,
+  board: number[],
+  size: number,
+  clearingRows: number[] | null,
+): void {
+  const { boardWidth, boardHeight } = gameMeta();
+  const width = boardWidth * size;
+  const height = boardHeight * size;
   ctx.fillStyle = BOARD_BG;
   ctx.fillRect(0, 0, width, height);
   ctx.strokeStyle = GRID;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  for (let x = 1; x < BOARD_WIDTH; x++) {
+  for (let x = 1; x < boardWidth; x++) {
     ctx.moveTo(x * size + 0.5, 0);
     ctx.lineTo(x * size + 0.5, height);
   }
-  for (let y = 1; y < BOARD_HEIGHT; y++) {
+  for (let y = 1; y < boardHeight; y++) {
     ctx.moveTo(0, y * size + 0.5);
     ctx.lineTo(width, y * size + 0.5);
   }
   ctx.stroke();
 
-  const clearing = snapshot.phase.kind === "clearing" ? snapshot.phase : null;
-  const clearingRows = new Set(clearing ? clearing.rows.map((r) => r - HIDDEN_ROWS) : []);
-  const progress = clearing ? 1 - clearing.remainingMs / CLEAR_ANIMATION_MS : 0;
+  const clearing = clearingRows ? new Set(clearingRows) : null;
+  for (let y = 0; y < boardHeight; y++) {
+    if (clearing?.has(y)) continue;
+    for (let x = 0; x < boardWidth; x++) {
+      const code = board[y * boardWidth + x];
+      if (code === 0) continue;
+      drawCell(ctx, x * size, y * size, size, CELL_COLORS[code] ?? "#fff");
+    }
+  }
+}
 
-  snapshot.board.forEach((row: Cell[], y) => {
-    const isClearing = clearingRows.has(y);
-    row.forEach((cell, x) => {
-      if (!cell) return;
-      if (isClearing) {
+/** Clearing animation, ghost, and active piece. Redrawn every frame. */
+export function drawBoardDynamic(
+  ctx: CanvasRenderingContext2D,
+  snapshot: Snapshot,
+  size: number,
+): void {
+  const { boardWidth, boardHeight, hiddenRows, clearAnimationMs } = gameMeta();
+  ctx.clearRect(0, 0, boardWidth * size, boardHeight * size);
+
+  if (snapshot.phase.kind === "clearing") {
+    const progress = 1 - snapshot.phase.remainingMs / clearAnimationMs;
+    for (const row of snapshot.phase.rows) {
+      const y = row - hiddenRows;
+      if (y < 0 || y >= boardHeight) continue;
+      for (let x = 0; x < boardWidth; x++) {
+        const code = snapshot.board[y * boardWidth + x];
+        if (code === 0) continue;
         const shrink = Math.max(0, 1 - progress * 1.05);
         const cellSize = size * shrink;
         const offset = (size - cellSize) / 2;
-        drawCell(ctx, x * size + offset, y * size + offset, cellSize, COLORS[cell], {
+        drawCell(ctx, x * size + offset, y * size + offset, cellSize, CELL_COLORS[code] ?? "#fff", {
           flash: Math.max(0, 0.9 - progress),
           alpha: Math.max(0.15, shrink),
         });
-      } else {
-        drawCell(ctx, x * size, y * size, size, COLORS[cell]);
       }
-    });
-  });
+    }
+  }
 
   if (snapshot.ghost && snapshot.active) {
     drawPiece(ctx, snapshot.active.kind, snapshot.ghost, size, 0, 0, { ghost: true });
@@ -161,48 +188,3 @@ export function setupCanvas(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   return ctx;
 }
-
-export const PREVIEW_SHAPES: Record<Tetromino, Point[]> = {
-  I: [
-    [0, 0],
-    [1, 0],
-    [2, 0],
-    [3, 0],
-  ],
-  O: [
-    [0, 0],
-    [1, 0],
-    [0, 1],
-    [1, 1],
-  ],
-  T: [
-    [1, 0],
-    [0, 1],
-    [1, 1],
-    [2, 1],
-  ],
-  S: [
-    [1, 0],
-    [2, 0],
-    [0, 1],
-    [1, 1],
-  ],
-  Z: [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [2, 1],
-  ],
-  J: [
-    [0, 0],
-    [0, 1],
-    [1, 1],
-    [2, 1],
-  ],
-  L: [
-    [2, 0],
-    [0, 1],
-    [1, 1],
-    [2, 1],
-  ],
-};

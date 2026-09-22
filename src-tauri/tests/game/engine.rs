@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rstris_lib::game::board::{Board, HIDDEN_ROWS};
+use rstris_lib::game::board::{Board, HIDDEN_ROWS, VISIBLE_HEIGHT, WIDTH};
 use rstris_lib::game::engine::{ActivePiece, CLEAR_ANIMATION, COUNTDOWN, MAX_LOCK_RESETS};
 use rstris_lib::game::{
     Game, GameConfig, GameEvent, InputAction, Phase, Rotation, SpinKind, Tetromino,
@@ -32,11 +32,54 @@ fn new_game_starts_with_countdown_and_queue() {
     assert_eq!(snapshot.countdown_ms, Some(COUNTDOWN.as_millis() as u64));
     assert_eq!(snapshot.next.len(), GameConfig::default().next_count);
     assert!(snapshot.active.is_some());
-    assert_eq!(snapshot.board.len(), 20);
+    assert_eq!(snapshot.board.len(), VISIBLE_HEIGHT * WIDTH);
     assert_eq!(snapshot.phase, Phase::Playing);
     assert!(!game.is_over());
     assert_eq!(snapshot.score, 0);
     assert_eq!(snapshot.level, 1);
+}
+
+#[test]
+fn snapshot_board_is_flat_visible_cells_in_piece_codes() {
+    let mut game = playing_game(3);
+    game.set_board(board_from(&["I...S....."]));
+    let snapshot = game.snapshot();
+    let row = (VISIBLE_HEIGHT - 1) * WIDTH;
+    assert_eq!(snapshot.board.len(), VISIBLE_HEIGHT * WIDTH);
+    assert_eq!(snapshot.board[row], Tetromino::I.code());
+    assert_eq!(snapshot.board[row + 1], 0);
+    assert_eq!(snapshot.board[row + 4], Tetromino::S.code());
+}
+
+#[test]
+fn board_version_advances_only_when_settled_cells_change() {
+    let mut game = playing_game(3);
+    let before = game.snapshot().board_version;
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 3, 0));
+    game.apply(InputAction::HardDrop);
+    let locked = game.snapshot().board_version;
+    assert!(locked > before);
+    advance(&mut game, 200);
+    assert_eq!(game.snapshot().board_version, locked);
+}
+
+#[test]
+fn board_version_advances_when_rows_clear() {
+    let mut game = playing_game(2);
+    game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
+    game.apply(InputAction::HardDrop);
+    let locked = game.snapshot().board_version;
+    advance(&mut game, CLEAR_ANIMATION.as_millis() as u64 + 20);
+    assert!(game.snapshot().board_version > locked);
+}
+
+#[test]
+fn versions_are_monotonic_across_games() {
+    let mut first = Game::new(seeded_config(1));
+    let last = first.snapshot().version;
+    let mut second = Game::new(seeded_config(1));
+    assert!(second.snapshot().version > last);
 }
 
 #[test]

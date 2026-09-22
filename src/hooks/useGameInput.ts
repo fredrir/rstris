@@ -1,37 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
-import { sendInput } from "../lib/ipc";
-import { lookupAction, pressAction, releaseAction } from "../lib/keys";
+import { api, sendInput } from "../lib/ipc";
 import type { KeyBindings } from "../lib/types";
 
-export type InputMode = "playing" | "paused" | "over" | "disabled";
+export function useGameInput(keys: KeyBindings, enabled: boolean): void {
+  const bound = useMemo(() => new Set(Object.values(keys).flat()), [keys]);
 
-export function useGameInput(keys: KeyBindings, mode: InputMode): void {
   useEffect(() => {
-    if (mode === "disabled" || mode === "over") return;
+    const send = (code: string, pressed: boolean) => {
+      void api.keyInput(code, pressed).catch((error) => console.error("key_input", code, error));
+    };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement) return;
-      const action = lookupAction(keys, event.code);
-      if (!action) return;
+      if (!enabled || event.target instanceof HTMLInputElement) return;
+      if (!bound.has(event.code)) return;
       event.preventDefault();
       if (event.repeat) return;
-      if (action === "pause") {
-        if (mode === "playing") sendInput("pause");
-        else if (mode === "paused") sendInput("resume");
-        return;
-      }
-      if (mode !== "playing") return;
-      const input = pressAction(action);
-      if (input) sendInput(input);
+      send(event.code, true);
     };
     const onKeyUp = (event: KeyboardEvent) => {
-      const action = lookupAction(keys, event.code);
-      if (!action) return;
-      const input = releaseAction(action);
-      if (input) sendInput(input);
+      if (!bound.has(event.code)) return;
+      send(event.code, false);
     };
     const onBlur = () => {
-      if (mode === "playing") sendInput("pause");
+      if (enabled) sendInput("pause");
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -41,5 +32,5 @@ export function useGameInput(keys: KeyBindings, mode: InputMode): void {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [keys, mode]);
+  }, [bound, enabled]);
 }

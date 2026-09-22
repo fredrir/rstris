@@ -1,5 +1,7 @@
+use rstris_lib::game::InputAction;
 use rstris_lib::settings::{
-    DEFAULT_PLAYER_NAME, KeyBindings, MAX_NAME_LEN, Settings, normalize_name,
+    DEFAULT_PLAYER_NAME, KeyAction, KeyBindings, MAX_NAME_LEN, SettingKey, Settings, SettingsPatch,
+    normalize_name, setting_limits,
 };
 
 #[test]
@@ -67,4 +69,73 @@ fn json_uses_camel_case_and_tolerates_missing_fields() {
     assert_eq!(partial.keys.hold, vec!["KeyH"]);
     assert_eq!(partial.keys.pause, KeyBindings::default().pause);
     assert_eq!(partial.das_ms, Settings::default().das_ms);
+}
+
+#[test]
+fn resolve_maps_bound_codes_to_actions() {
+    let keys = KeyBindings::default();
+    assert_eq!(keys.resolve("ArrowLeft"), Some(KeyAction::MoveLeft));
+    assert_eq!(keys.resolve("ShiftLeft"), Some(KeyAction::Hold));
+    assert_eq!(keys.resolve("KeyQ"), None);
+}
+
+#[test]
+fn key_actions_map_to_press_and_release_inputs() {
+    assert_eq!(
+        KeyAction::MoveLeft.input(true),
+        Some(InputAction::LeftPress)
+    );
+    assert_eq!(
+        KeyAction::MoveLeft.input(false),
+        Some(InputAction::LeftRelease)
+    );
+    assert_eq!(
+        KeyAction::SoftDrop.input(true),
+        Some(InputAction::SoftDropPress)
+    );
+    assert_eq!(
+        KeyAction::SoftDrop.input(false),
+        Some(InputAction::SoftDropRelease)
+    );
+    assert_eq!(KeyAction::HardDrop.input(true), Some(InputAction::HardDrop));
+    assert_eq!(KeyAction::HardDrop.input(false), None);
+    assert_eq!(KeyAction::Pause.input(true), Some(InputAction::TogglePause));
+    assert_eq!(KeyAction::Pause.input(false), None);
+}
+
+#[test]
+fn assigning_a_key_evicts_it_from_other_actions() {
+    let keys = KeyBindings::default().assign(KeyAction::HardDrop, 5, Some("ArrowLeft".into()));
+    assert_eq!(keys.hard_drop, vec!["Space", "ArrowLeft"]);
+    assert!(keys.move_left.is_empty());
+}
+
+#[test]
+fn assigning_replaces_slots_and_clears_with_none() {
+    let keys = KeyBindings::default().assign(KeyAction::RotateCw, 0, Some("KeyQ".into()));
+    assert_eq!(keys.rotate_cw, vec!["KeyQ", "KeyX"]);
+    let keys = keys.assign(KeyAction::RotateCw, 1, None);
+    assert_eq!(keys.rotate_cw, vec!["KeyQ"]);
+    let keys = keys.assign(KeyAction::RotateCw, 9, Some("KeyR".into()));
+    assert_eq!(keys.rotate_cw, vec!["KeyQ", "KeyR"]);
+}
+
+#[test]
+fn patch_applies_only_present_fields() {
+    let patch: SettingsPatch = serde_json::from_str(r#"{"dasMs":200,"ghostPiece":false}"#).unwrap();
+    let next = patch.apply(&Settings::default());
+    assert_eq!(next.das_ms, 200);
+    assert!(!next.ghost_piece);
+    assert_eq!(next.arr_ms, Settings::default().arr_ms);
+    assert_eq!(next.player_name, DEFAULT_PLAYER_NAME);
+}
+
+#[test]
+fn patch_values_are_clamped_to_declared_limits() {
+    let limit = setting_limits()
+        .into_iter()
+        .find(|limit| limit.key == SettingKey::DasMs)
+        .unwrap();
+    let patch: SettingsPatch = serde_json::from_str(r#"{"dasMs":99999}"#).unwrap();
+    assert_eq!(patch.apply(&Settings::default()).das_ms, limit.max as u64);
 }

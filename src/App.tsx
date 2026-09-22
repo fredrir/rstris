@@ -6,7 +6,8 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { Page } from "./components/ui/Page";
 import { sfx } from "./lib/audio";
 import { api } from "./lib/ipc";
-import type { Settings } from "./lib/types";
+import { loadGameMeta } from "./lib/meta";
+import type { KeyAction, Settings, SettingsPatch } from "./lib/types";
 
 type Screen = "menu" | "game" | "scores" | "settings";
 
@@ -19,12 +20,12 @@ export default function App() {
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
-  const saveSequence = useRef(0);
+  const pendingPatch = useRef<SettingsPatch>({});
+  const settingsVersion = useRef(0);
 
   useEffect(() => {
-    api
-      .getSettings()
-      .then(setSettings)
+    Promise.all([api.getSettings(), loadGameMeta()])
+      .then(([loaded]) => setSettings(loaded))
       .catch((e) => setError(String(e)));
   }, []);
 
@@ -32,25 +33,48 @@ export default function App() {
     if (settings) sfx.configure(settings.soundEnabled, settings.soundVolume);
   }, [settings]);
 
-  const updateSettings = useCallback((next: Settings) => {
-    setSettings(next);
-    if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
-    const sequence = ++saveSequence.current;
-    saveTimer.current = window.setTimeout(() => {
-      api
-        .saveSettings(next)
-        .then((saved) => {
-          if (sequence === saveSequence.current) setSettings(saved);
-        })
-        .catch((e) => setError(String(e)));
-    }, SAVE_DEBOUNCE_MS);
+  const flushSettings = useCallback(() => {
+    const patch = pendingPatch.current;
+    pendingPatch.current = {};
+    if (Object.keys(patch).length === 0) return;
+    const version = settingsVersion.current;
+    api
+      .updateSettings(patch)
+      .then((saved) => {
+        if (version === settingsVersion.current) setSettings(saved);
+      })
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  const updateSettings = useCallback(
+    (patch: SettingsPatch) => {
+      setSettings((current) => (current ? { ...current, ...patch } : current));
+      pendingPatch.current = { ...pendingPatch.current, ...patch };
+      settingsVersion.current++;
+      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
+      saveTimer.current = window.setTimeout(flushSettings, SAVE_DEBOUNCE_MS);
+    },
+    [flushSettings],
+  );
+
+  const assignKey = useCallback((action: KeyAction, slot: number, code: string | null) => {
+    const version = ++settingsVersion.current;
+    api
+      .assignKey(action, slot, code)
+      .then((saved) => {
+        if (version === settingsVersion.current) setSettings(saved);
+      })
+      .catch((e) => setError(String(e)));
   }, []);
 
   const resetSettings = useCallback(() => {
-    saveSequence.current++;
+    const version = ++settingsVersion.current;
+    pendingPatch.current = {};
     api
       .resetSettings()
-      .then(setSettings)
+      .then((saved) => {
+        if (version === settingsVersion.current) setSettings(saved);
+      })
       .catch((e) => setError(String(e)));
   }, []);
 
@@ -80,6 +104,7 @@ export default function App() {
     <SettingsScreen
       settings={settings}
       onChange={updateSettings}
+      onAssignKey={assignKey}
       onReset={resetSettings}
       onBack={() => (screen === "game" ? setSettingsOverGame(false) : setScreen("menu"))}
     />

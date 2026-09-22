@@ -6,8 +6,7 @@ import { Menu } from "./Menu";
 import { Button } from "./ui/Button";
 import { Overlay, OverlayTitle } from "./ui/Overlay";
 
-export function CountdownOverlay({ ms }: { ms: number }) {
-  const digit = Math.max(1, Math.ceil(ms / 500));
+export function CountdownOverlay({ digit }: { digit: number }) {
   return (
     <Overlay dim={false} className="pointer-events-none">
       <span

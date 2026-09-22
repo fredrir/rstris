@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { COLORS, PREVIEW_SHAPES, drawPiece, setupCanvas } from "../lib/render";
+import { COLORS, drawPiece, setupCanvas } from "../lib/render";
+import { gameMeta } from "../lib/meta";
 import type { Tetromino } from "../lib/types";
 
 interface Drifter {
@@ -32,6 +33,7 @@ export function MenuBackdrop() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    const shapes = new Map(gameMeta().previewShapes.map((piece) => [piece.kind, piece.cells]));
     let drifters: Drifter[] = [];
     let frame = 0;
     let last = performance.now();
@@ -53,7 +55,8 @@ export function MenuBackdrop() {
           return { ...d, y };
         });
         for (const d of drifters) {
-          drawPiece(ctx, d.kind, PREVIEW_SHAPES[d.kind], d.size, d.x, d.y, { alpha: d.alpha });
+          const shape = shapes.get(d.kind);
+          if (shape) drawPiece(ctx, d.kind, shape, d.size, d.x, d.y, { alpha: d.alpha });
         }
       }
       frame = requestAnimationFrame(tick);

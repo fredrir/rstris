@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useGameInput, type InputMode } from "../hooks/useGameInput";
-import { useGameState } from "../hooks/useGameState";
+import { useGameInput } from "../hooks/useGameInput";
+import { useGameSession, useGameUi } from "../hooks/useGameSession";
 
 import { sfx } from "../lib/audio";
 import { cx } from "../lib/cx";
 import { handleEvent as dispatchGameEvent, type Popup } from "../lib/game/event";
-import { api, sendInput } from "../lib/ipc";
+import { gameSession } from "../lib/game/session";
+import { api, onGameOver, sendInput } from "../lib/ipc";
 import type { GameEvent, GameOverInfo, Settings, SubmitResult } from "../lib/types";
 import { BoardCanvas } from "./BoardCanvas";
 import { CountdownOverlay, GameOverOverlay, PauseOverlay } from "./Overlays";
@@ -33,19 +34,15 @@ const POPUP_TONES: Record<Popup["tone"], string> = {
 };
 
 export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSettings }: Props) {
-  const { snapshot, restart } = useGameState();
+  const ui = useGameUi();
+  const { restart } = useGameSession();
   const [popups, setPopups] = useState<Popup[]>([]);
   const [levelFlash, setLevelFlash] = useState(false);
   const [gameOver, setGameOver] = useState<GameOverInfo | null>(null);
   const [submitted, setSubmitted] = useState<SubmitResult | null>(null);
   const popupId = useRef(0);
-  const countdownDigit = useRef<number | null>(null);
 
-  const over = snapshot?.phase.kind === "game_over";
-  const paused = snapshot?.paused ?? false;
-  const mode: InputMode =
-    !snapshot || !inputEnabled ? "disabled" : over ? "over" : paused ? "paused" : "playing";
-  useGameInput(settings.keys, mode);
+  useGameInput(settings.keys, inputEnabled);
 
   const pushPopup = useCallback((popup: Omit<Popup, "id">) => {
     const id = ++popupId.current;
@@ -64,45 +61,37 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
   );
 
   useEffect(() => {
-    if (!snapshot) return;
-    snapshot.events.forEach(handleEvent);
-  }, [snapshot, handleEvent]);
-
-  useEffect(() => {
-    const ms = snapshot?.countdownMs ?? null;
-    const digit = ms === null ? null : Math.max(1, Math.ceil(ms / 500));
-    if (digit !== countdownDigit.current) {
-      if (digit !== null) sfx.play("countdown");
-      else if (countdownDigit.current !== null) sfx.play("go");
-      countdownDigit.current = digit;
-    }
-  }, [snapshot?.countdownMs]);
-
-  useEffect(() => {
-    if (!over) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const info = await api.gameOverInfo();
-        if (cancelled) return;
-        if (info.rank === null && !info.recorded) {
-          const result = await api.submitScore(info.playerName);
-          if (!cancelled) setSubmitted(result);
-        }
-        if (!cancelled) setGameOver(info);
-      } catch (error) {
-        console.error("game_over_info", error);
+    let countdownDigit: number | null = null;
+    return gameSession.subscribeFrame((snapshot) => {
+      snapshot.events.forEach(handleEvent);
+      const digit =
+        snapshot.countdownMs === null ? null : Math.max(1, Math.ceil(snapshot.countdownMs / 500));
+      if (digit !== countdownDigit) {
+        if (digit !== null) sfx.play("countdown");
+        else if (countdownDigit !== null) sfx.play("go");
+        countdownDigit = digit;
       }
-    })();
+    });
+  }, [handleEvent]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+    void onGameOver((info) => setGameOver(info)).then((fn) => {
+      if (cancelled) fn();
+      else unlisten = fn;
+    });
     return () => {
       cancelled = true;
+      unlisten?.();
     };
-  }, [over]);
+  }, []);
 
   const handleRestart = useCallback(() => {
     setPopups([]);
     setGameOver(null);
     setSubmitted(null);
+    setLevelFlash(false);
     void restart();
   }, [restart]);
 
@@ -114,28 +103,29 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
     }
   }, []);
 
-  if (!snapshot)
+  if (!ui)
     return <div className="relative grid size-full place-items-center text-muted">Starting…</div>;
 
-  const showCountdown = snapshot.countdownMs !== null && !paused && !over;
+  const over = ui.phase === "game_over";
+  const showCountdown = ui.countdownDigit !== null && !ui.paused && !over;
 
   return (
     <div className="relative grid size-full grid-cols-[200px_minmax(0,1fr)_220px] gap-4.5 p-4.5 max-[1000px]:grid-cols-[170px_minmax(0,1fr)_190px] max-[1000px]:gap-3 max-[1000px]:p-3">
       <GamePanel>
         <GameCard className="flex w-full justify-start">
-          <PiecePreview kind={snapshot.hold} dim={!snapshot.holdAvailable} />
+          <PiecePreview kind={ui.hold} dim={!ui.holdAvailable} />
         </GameCard>
         <GameCard className="mt-auto gap-2">
           <div className="flex w-full justify-start gap-4">
-            <GameStatCard label="Level" value={snapshot.level} />
-            <GameStatCard label="Lines" value={snapshot.lines} />
-            <GameStatCard label="Score" tone="accent" value={snapshot.score} />
+            <GameStatCard label="Level" value={ui.level} />
+            <GameStatCard label="Lines" value={ui.lines} />
+            <GameStatCard label="Score" tone="accent" value={ui.score} />
           </div>
         </GameCard>
       </GamePanel>
 
       <main className="flex min-h-0 min-w-0">
-        <BoardCanvas snapshot={snapshot} className={cx(levelFlash && "animate-level-glow")}>
+        <BoardCanvas className={cx(levelFlash && "animate-level-glow")}>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {popups.map((popup) => (
               <div
@@ -158,10 +148,10 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
               </div>
             ))}
           </div>
-          {showCountdown && snapshot.countdownMs !== null && (
-            <CountdownOverlay ms={snapshot.countdownMs} />
+          {showCountdown && ui.countdownDigit !== null && (
+            <CountdownOverlay digit={ui.countdownDigit} />
           )}
-          {paused && !over && inputEnabled && (
+          {ui.paused && !over && inputEnabled && (
             <PauseOverlay
               onResume={() => sendInput("resume")}
               onRestart={handleRestart}
@@ -185,8 +175,8 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
       <GamePanel>
         <GameCard className="flex w-full justify-end">
           <div className="flex flex-col items-center gap-1">
-            {snapshot.next.length === 0 && <span className="text-xs text-muted">hidden</span>}
-            {snapshot.next.map((kind, i) => (
+            {ui.next.length === 0 && <span className="text-xs text-muted">hidden</span>}
+            {ui.next.map((kind, i) => (
               <PiecePreview key={`${i}-${kind}`} kind={kind} size={i === 0 ? 18 : 14} />
             ))}
           </div>

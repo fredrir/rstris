@@ -33,7 +33,9 @@ pub struct PieceView {
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
     pub version: u64,
-    pub board: Vec<Vec<Option<Tetromino>>>,
+    pub board_version: u64,
+    /// Flat row-major visible cells: one byte per cell, 0 empty, 1..=7 tetromino.
+    pub board: Vec<u8>,
     pub active: Option<PieceView>,
     pub ghost: Option<[[i32; 2]; 4]>,
     pub hold: Option<Tetromino>,

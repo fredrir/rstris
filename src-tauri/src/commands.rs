@@ -4,8 +4,11 @@ use tauri::{AppHandle, State};
 use crate::db::{HIGH_SCORE_LIMIT, ScoreEntry};
 use crate::error::{AppError, AppResult};
 use crate::game::{Game, GameSummary, InputAction, Snapshot};
-use crate::settings::{Settings, normalize_name};
+use crate::meta::{GameMeta, game_meta};
+use crate::settings::{KeyAction, Settings, SettingsPatch, normalize_name};
 use crate::state::AppState;
+
+pub const GAME_OVER_EVENT: &str = "game-over";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,13 +26,7 @@ pub struct SubmitResult {
     pub rank: usize,
 }
 
-#[tauri::command]
-pub fn get_settings(state: State<'_, AppState>) -> AppResult<Settings> {
-    Ok(state.settings().clone())
-}
-
-#[tauri::command]
-pub fn save_settings(state: State<'_, AppState>, settings: Settings) -> AppResult<Settings> {
+fn persist_settings(state: &AppState, settings: Settings) -> AppResult<Settings> {
     let settings = settings.normalized();
     if let Some(game) = state.game().as_mut() {
         game.update_config(settings.game_config());
@@ -40,8 +37,36 @@ pub fn save_settings(state: State<'_, AppState>, settings: Settings) -> AppResul
 }
 
 #[tauri::command]
+pub fn get_settings(state: State<'_, AppState>) -> AppResult<Settings> {
+    Ok(state.settings().clone())
+}
+
+#[tauri::command]
+pub fn update_settings(state: State<'_, AppState>, patch: SettingsPatch) -> AppResult<Settings> {
+    let current = state.settings().clone();
+    persist_settings(&state, patch.apply(&current))
+}
+
+#[tauri::command]
+pub fn assign_key(
+    state: State<'_, AppState>,
+    action: KeyAction,
+    slot: usize,
+    code: Option<String>,
+) -> AppResult<Settings> {
+    let current = state.settings().clone();
+    let keys = current.keys.assign(action, slot, code);
+    persist_settings(&state, Settings { keys, ..current })
+}
+
+#[tauri::command]
 pub fn reset_settings(state: State<'_, AppState>) -> AppResult<Settings> {
-    save_settings(state, Settings::default())
+    persist_settings(&state, Settings::default())
+}
+
+#[tauri::command]
+pub fn get_game_meta() -> GameMeta {
+    game_meta()
 }
 
 #[tauri::command]
@@ -74,15 +99,33 @@ pub fn game_input(state: State<'_, AppState>, action: InputAction) -> AppResult<
     Ok(())
 }
 
+/// Resolves a raw keyboard event against the configured bindings and applies
+/// the resulting engine input.
+#[tauri::command]
+pub fn key_input(state: State<'_, AppState>, code: String, pressed: bool) -> AppResult<()> {
+    let input = state
+        .settings()
+        .keys
+        .resolve(&code)
+        .and_then(|action| action.input(pressed));
+    if let Some(input) = input
+        && let Some(game) = state.game().as_mut()
+    {
+        game.apply(input);
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn end_game(state: State<'_, AppState>) -> AppResult<()> {
     *state.game() = None;
     Ok(())
 }
 
-#[tauri::command]
-pub fn game_over_info(state: State<'_, AppState>) -> AppResult<GameOverInfo> {
-    let (summary, recorded) = {
+/// Persists the finished game if it does not qualify for a name prompt. Safe to
+/// call repeatedly: the game records itself once.
+pub fn finalize_game(state: &AppState) -> AppResult<GameOverInfo> {
+    let (summary, mut recorded) = {
         let guard = state.game();
         let game = guard.as_ref().ok_or(AppError::NoGame)?;
         if !game.is_over() {
@@ -90,14 +133,20 @@ pub fn game_over_info(state: State<'_, AppState>) -> AppResult<GameOverInfo> {
         }
         (game.summary(), game.is_recorded())
     };
-    let rank = if recorded {
-        None
-    } else {
-        state
-            .db()
-            .qualifying_rank(summary.score, HIGH_SCORE_LIMIT)?
-    };
     let player_name = state.settings().player_name.clone();
+    let mut rank = None;
+    if !recorded {
+        rank = state
+            .db()
+            .qualifying_rank(summary.score, HIGH_SCORE_LIMIT)?;
+        if rank.is_none() {
+            state.db().insert_score(&player_name, &summary)?;
+            if let Some(game) = state.game().as_mut() {
+                game.mark_recorded();
+            }
+            recorded = true;
+        }
+    }
     Ok(GameOverInfo {
         summary,
         rank,
