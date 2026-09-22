@@ -29,7 +29,6 @@ const TD_NUM = `${TD} text-right font-mono tabular-nums`;
 
 export function HighScoresScreen({ highlightId, onBack }: Props) {
   const [scores, setScores] = useState<ScoreEntry[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
       .then((loaded) => {
         if (cancelled) return;
         setScores(loaded.scores);
-        setStats(loaded.stats);
       })
       .catch((error) => console.error("high scores", error));
     return () => {
@@ -59,7 +57,6 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
     setConfirmClear(false);
     const loaded = await fetchHighScores();
     setScores(loaded.scores);
-    setStats(loaded.stats);
   };
 
   return (
@@ -93,55 +90,41 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
         </div>
       </header>
 
-      {scores.length === 0 ? undefined : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className={`${TH} text-left`}>#</th>
-              <th className={`${TH} text-left`}>Name</th>
-              <th className={TH_NUM}>Score</th>
-              <th className={TH_NUM}>Level</th>
-              <th className={TH_NUM}>Lines</th>
-              <th className={TH_NUM}>Time</th>
-              <th className={TH_NUM}>Tetrises</th>
-              <th className={TH_NUM}>T-Spins</th>
-              <th className={`${TH} text-left`}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scores.map((entry, i) => (
-              <tr key={entry.id} className={entry.id === highlightId ? "[&>td]:bg-accent/10" : ""}>
-                <td className={`${TD} w-10 font-mono ${rankClass(i)}`}>{i + 1}</td>
-                <td className={TD}>{entry.name}</td>
-                <td className={TD_NUM}>{formatNumber(entry.score)}</td>
-                <td className={TD_NUM}>{entry.level}</td>
-                <td className={TD_NUM}>{entry.lines}</td>
-                <td className={TD_NUM}>{formatTime(entry.durationMs)}</td>
-                <td className={TD_NUM}>{entry.tetrises}</td>
-                <td className={TD_NUM}>{entry.tspins}</td>
-                <td className={TD}>{formatDate(entry.playedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {stats && stats.games > 0 && (
-        <section className="grid grid-cols-6 gap-2.5 max-[1000px]:grid-cols-4">
-          <Stat label="Games" value={formatNumber(stats.games)} />
-          <Stat label="Best score" value={formatNumber(stats.bestScore)} />
-          <Stat label="Total score" value={formatNumber(stats.totalScore)} />
-          <Stat label="Total lines" value={formatNumber(stats.totalLines)} />
-          <Stat label="Most lines" value={formatNumber(stats.bestLines)} />
-          <Stat label="Highest level" value={String(stats.highestLevel)} />
-          <Stat label="Play time" value={formatTime(stats.totalTimeMs)} />
-          <Stat label="Pieces" value={formatNumber(stats.totalPieces)} />
-          <Stat label="Tetrises" value={formatNumber(stats.tetrises)} />
-          <Stat label="T-Spins" value={formatNumber(stats.tspins)} />
-          <Stat label="Perfect clears" value={formatNumber(stats.perfectClears)} />
-          <Stat label="Best combo" value={String(stats.bestCombo)} />
-        </section>
-      )}
+      <table className="w-full text-sm">
+        <thead>
+          <tr>
+            <th className={`${TH} text-left`}>#</th>
+            <th className={`${TH} text-left`}>Name</th>
+            <th className={TH_NUM}>Score</th>
+            <th className={TH_NUM}>Level</th>
+            <th className={TH_NUM}>Lines</th>
+            <th className={TH_NUM}>Time</th>
+            <th className={TH_NUM}>Tetrises</th>
+            <th className={TH_NUM}>T-Spins</th>
+            <th className={`${TH} text-left`}>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scores.length === 0
+            ? undefined
+            : scores.map((entry, i) => (
+                <tr
+                  key={entry.id}
+                  className={entry.id === highlightId ? "[&>td]:bg-accent/10" : ""}
+                >
+                  <td className={`${TD} w-10 font-mono ${rankClass(i)}`}>{i + 1}</td>
+                  <td className={TD}>{entry.name}</td>
+                  <td className={TD_NUM}>{formatNumber(entry.score)}</td>
+                  <td className={TD_NUM}>{entry.level}</td>
+                  <td className={TD_NUM}>{entry.lines}</td>
+                  <td className={TD_NUM}>{formatTime(entry.durationMs)}</td>
+                  <td className={TD_NUM}>{entry.tetrises}</td>
+                  <td className={TD_NUM}>{entry.tspins}</td>
+                  <td className={TD}>{formatDate(entry.playedAt)}</td>
+                </tr>
+              ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -151,13 +134,4 @@ function rankClass(index: number) {
   if (index === 1) return "font-bold text-gray-300";
   if (index === 2) return "font-bold text-amber-600";
   return "text-muted";
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-[10px] border border-white/10 bg-white/4 px-3 py-2.5">
-      <span className="text-[11px] tracking-[0.12em] text-muted uppercase">{label}</span>
-      <span className="font-mono text-lg font-bold tabular-nums">{value}</span>
-    </div>
-  );
 }

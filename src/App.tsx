@@ -103,9 +103,7 @@ export default function App() {
         />
       )}
       {screen === "game" && settingsOverGame && (
-        <div className="absolute inset-0 z-10 animate-fade-in bg-[#080a10]/96 backdrop-blur-[6px]">
-          {settingsView}
-        </div>
+        <div className="absolute inset-0 z-10 animate-fade-in bg-[#080a10]">{settingsView}</div>
       )}
       {screen === "scores" && <HighScoresScreen highlightId={highlightId} onBack={goMenu} />}
       {screen === "settings" && settingsView}

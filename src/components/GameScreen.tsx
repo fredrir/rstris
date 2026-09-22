@@ -2,20 +2,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useGameInput, type InputMode } from "../hooks/useGameInput";
 import { useGameState } from "../hooks/useGameState";
+
 import { sfx } from "../lib/audio";
-import { formatNumber, formatTime } from "../lib/format";
+import { handleEvent as dispatchGameEvent, type Popup } from "../lib/game/event";
 import { api, sendInput } from "../lib/ipc";
 import type { GameEvent, GameOverInfo, Settings, SubmitResult } from "../lib/types";
 import { BoardCanvas } from "./BoardCanvas";
 import { CountdownOverlay, GameOverOverlay, PauseOverlay } from "./Overlays";
 import { PiecePreview } from "./PiecePreview";
-
-interface Popup {
-  id: number;
-  title: string;
-  lines: string[];
-  tone: "normal" | "big" | "spin" | "level";
-}
+import GamePanel from "./Game/GamePanel";
+import GameStatCard from "./Game/GameStatCard";
+import GameCard from "./Game/GameCard";
 
 interface Props {
   settings: Settings;
@@ -26,13 +23,6 @@ interface Props {
 }
 
 const POPUP_MS = 1300;
-
-const GAME_GRID =
-  "relative grid h-full w-full grid-cols-[200px_minmax(0,1fr)_220px] gap-4.5 p-4.5 max-[1000px]:grid-cols-[170px_minmax(0,1fr)_190px] max-[1000px]:gap-3 max-[1000px]:p-3";
-const PANEL = "flex min-h-0 flex-col gap-3";
-const CARD = "border border-white/10 px-3.5 py-3";
-const STAT_LABEL = "text-[11px] uppercase tracking-[0.12em] text-muted";
-const STAT_VALUE = "font-mono font-bold tabular-nums";
 
 function popupTitleClass(tone: Popup["tone"]) {
   const size = tone === "big" ? "text-[34px]" : "text-[26px]";
@@ -68,59 +58,14 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
     window.setTimeout(() => setPopups((list) => list.filter((p) => p.id !== id)), POPUP_MS);
   }, []);
 
+  const flashLevel = useCallback(() => {
+    setLevelFlash(true);
+    window.setTimeout(() => setLevelFlash(false), 700);
+  }, []);
+
   const handleEvent = useCallback(
-    (event: GameEvent) => {
-      switch (event.type) {
-        case "move":
-          sfx.play("move");
-          break;
-        case "rotate":
-          sfx.play("rotate");
-          break;
-        case "soft_drop":
-          sfx.play("softDrop");
-          break;
-        case "hard_drop":
-          sfx.play("hardDrop");
-          break;
-        case "lock":
-          sfx.play("lock");
-          break;
-        case "hold":
-          sfx.play("hold");
-          break;
-        case "line_clear": {
-          const { result } = event;
-          const lines: string[] = [`+${formatNumber(result.points)}`];
-          if (result.backToBack) lines.push("BACK-TO-BACK");
-          if (result.combo > 0) lines.push(`COMBO ×${result.combo}`);
-          if (result.perfectClear) lines.push("PERFECT CLEAR");
-          const tone =
-            result.spin !== "none"
-              ? "spin"
-              : result.lines === 4 || result.perfectClear
-                ? "big"
-                : "normal";
-          pushPopup({ title: result.label, lines, tone });
-          sfx.play(result.spin !== "none" ? "tspin" : result.lines === 4 ? "tetris" : "clear");
-          break;
-        }
-        case "level_up":
-          pushPopup({
-            title: `LEVEL ${event.level}`,
-            lines: [],
-            tone: "level",
-          });
-          setLevelFlash(true);
-          window.setTimeout(() => setLevelFlash(false), 700);
-          sfx.play("levelUp");
-          break;
-        case "game_over":
-          sfx.play("gameOver");
-          break;
-      }
-    },
-    [pushPopup],
+    (event: GameEvent) => dispatchGameEvent(event, { pushPopup, flashLevel }),
+    [pushPopup, flashLevel],
   );
 
   useEffect(() => {
@@ -178,19 +123,24 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
     return <div className="relative grid size-full place-items-center text-muted">Starting…</div>;
 
   const showCountdown = snapshot.countdownMs !== null && !paused && !over;
-  const boardDimClass = over ? "saturate-[0.4]" : "";
-  const boardFlashClass = levelFlash ? "animate-level-glow" : "";
 
   return (
-    <div className={GAME_GRID}>
-      <aside className={PANEL}>
-        <section className={CARD}>
+    <div className="relative grid size-full grid-cols-[200px_minmax(0,1fr)_220px] gap-4.5 p-4.5 max-[1000px]:grid-cols-[170px_minmax(0,1fr)_190px] max-[1000px]:gap-3 max-[1000px]:p-3">
+      <GamePanel>
+        <GameCard className="flex w-full justify-start">
           <PiecePreview kind={snapshot.hold} dim={!snapshot.holdAvailable} />
-        </section>
-      </aside>
+        </GameCard>
+        <GameCard className="mt-auto gap-2">
+          <div className="flex w-full justify-start gap-4">
+            <GameStatCard label="Level" value={snapshot.level} />
+            <GameStatCard label="Lines" value={snapshot.lines} />
+            <GameStatCard label="Score" textColor="accent" value={snapshot.score} />
+          </div>
+        </GameCard>
+      </GamePanel>
 
       <main className="flex min-h-0 min-w-0">
-        <BoardCanvas snapshot={snapshot} className={`${boardDimClass} ${boardFlashClass}`}>
+        <BoardCanvas snapshot={snapshot} className={`${levelFlash ? "animate-level-glow" : ""}`}>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {popups.map((popup) => (
               <div
@@ -230,40 +180,16 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
         </BoardCanvas>
       </main>
 
-      <aside className={PANEL}>
-        <section className={CARD}>
-          <div className="flex flex-col items-center gap-0.5">
+      <GamePanel>
+        <GameCard className="flex w-full justify-end">
+          <div className="flex flex-col items-center gap-1">
             {snapshot.next.length === 0 && <span className="text-xs text-muted">hidden</span>}
             {snapshot.next.map((kind, i) => (
               <PiecePreview key={`${i}-${kind}`} kind={kind} size={i === 0 ? 18 : 14} />
             ))}
           </div>
-        </section>
-        <section className={`${CARD} flex flex-col gap-2`}>
-          <div className="flex flex-col">
-            <span className={STAT_LABEL}>Score</span>
-            <span className={`${STAT_VALUE} text-[26px] text-accent`}>
-              {formatNumber(snapshot.score)}
-            </span>
-          </div>
-        </section>
-        <section className={`${CARD} flex flex-col gap-2`}>
-          <div className="flex w-full justify-between">
-            <div className="flex flex-col">
-              <span className={STAT_LABEL}>Time</span>
-              <span className={`${STAT_VALUE} text-xl`}>{formatTime(snapshot.elapsedMs)}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className={STAT_LABEL}>Level</span>
-              <span className={`${STAT_VALUE} text-xl`}>{snapshot.level}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className={STAT_LABEL}>Lines</span>
-              <span className={`${STAT_VALUE} text-xl`}>{snapshot.lines}</span>
-            </div>
-          </div>
-        </section>
-      </aside>
+        </GameCard>
+      </GamePanel>
     </div>
   );
 }

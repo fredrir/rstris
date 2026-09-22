@@ -42,7 +42,7 @@ export function Menu({ items, compact = false }: Props) {
   }, [items, index]);
 
   return (
-    <ul className="m-0 flex w-full list-none flex-col gap-1 p-0" role="menu">
+    <ul className="m-0 flex w-full list-none flex-col items-center gap-1 p-0" role="menu">
       {items.map((item, i) => {
         const active = i === index;
         return (

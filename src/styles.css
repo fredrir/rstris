@@ -107,9 +107,6 @@
 
   body {
     @apply bg-bg font-sans text-sm text-ink;
-    background-image:
-      radial-gradient(1200px 600px at 20% -10%, rgb(34 211 238 / 0.12), transparent 60%),
-      radial-gradient(900px 500px at 90% 110%, rgb(192 132 252 / 0.14), transparent 60%);
     user-select: none;
     -webkit-user-select: none;
     cursor: default;

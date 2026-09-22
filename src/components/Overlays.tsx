@@ -4,8 +4,8 @@ import { formatNumber, formatTime } from "../lib/format";
 import type { GameOverInfo, SubmitResult } from "../lib/types";
 import { Menu } from "./Menu";
 
-const OVERLAY = "absolute inset-0 flex flex-col  justify-center gap-3.5 text-center";
-const OVERLAY_DIM = "bg-[#080a10]/78 backdrop-blur-[3px] animate-fade-in";
+const OVERLAY = "absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center";
+const OVERLAY_DIM = "bg-[#080a10]/78 animate-fade-in";
 const OVERLAY_TITLE = "font-mono text-[30px] font-bold tracking-[0.2em]";
 const BUTTON =
   "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
@@ -81,6 +81,11 @@ export function GameOverOverlay({
   return (
     <div className={`${OVERLAY} ${OVERLAY_DIM}`}>
       <h2 className={`${OVERLAY_TITLE} text-danger`}>GAME OVER</h2>
+      {submitted && info?.rank !== null && (
+        <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
+          Saved as #{submitted.rank}
+        </p>
+      )}
       {info && (
         <dl className="m-0 grid grid-cols-[auto_auto] gap-x-4.5 gap-y-1">
           <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
@@ -108,11 +113,6 @@ export function GameOverOverlay({
       {needsName && info && <NewHighScoreForm info={info} onSubmit={onSubmit} />}
       {!needsName && info && (
         <>
-          {submitted && info.rank !== null && (
-            <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
-              Saved as #{submitted.rank}
-            </p>
-          )}
           <Menu
             compact
             items={[

@@ -38,7 +38,7 @@ export function BoardCanvas({ snapshot, className = "", children }: Props) {
   return (
     <div className="grid min-h-0 min-w-0 flex-1 place-items-center" ref={measureRef}>
       <div
-        className={`relative overflow-hidden rounded-md border-2 border-white/12 shadow-[0_20px_60px_rgb(0_0_0/0.5),inset_0_0_40px_rgb(0_0_0/0.5)] transition-[filter] duration-400 ${className}`}
+        className={`relative overflow-hidden rounded-md border-2 border-white/12 transition-[filter] duration-400 ${className}`}
         style={{ width: BOARD_WIDTH * cell, height: BOARD_HEIGHT * cell }}
       >
         <canvas ref={canvasRef} className="block" />
