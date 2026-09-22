@@ -62,20 +62,20 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 
 ## Layout
 
-| Path                         | Value                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `app-icon.svg`               | Logo source; `bun tauri icon app-icon.svg` regenerates `src-tauri/icons/`                               |
-| `src-tauri/src/game/`        | `piece` (shapes, kicks, wire codes), `board`, `bag`, `scoring`, `input` (DAS/ARR), `engine`, `snapshot` |
-| `src-tauri/src/meta.rs`      | Board geometry, preview shapes, setting limits served by `get_game_meta`                                |
-| `src-tauri/src/db/`          | `scores`, `settings`                                                                                    |
-| `src-tauri/src/commands.rs`  | Tauri IPC commands                                                                                      |
-| `src-tauri/src/game_loop.rs` | 4 ms tick while playing, 50 ms while idle; emits `game-state` (≤ 125 Hz) and `game-over`                |
-| `src-tauri/tests/`           | Mirrors `src/` modules                                                                                  |
-| `src/components/`            | Screens and overlays                                                                                    |
-| `src/components/ui/`         | `Button`, `Card`, `Screen`, `Page`, `Overlay`, `Table`, `Toggle`, `FieldRow` primitives                 |
-| `src/lib/game/`              | `session` (snapshot store + frame/UI subscriptions), `event` (SFX + popups)                             |
-| `src/lib/`                   | `types`, `ipc`, `keys`, `meta`, `audio`, `render`, `format`, `cx`                                       |
-| `src/styles.css`             | Tailwind entry: `@theme` tokens, keyframes, base layer                                                  |
+| Path                         | Value                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `app-icon.svg`               | Logo source; `bun tauri icon app-icon.svg` regenerates `src-tauri/icons/`                                            |
+| `src-tauri/src/game/`        | `piece` (shapes, kicks, wire codes), `board`, `bag`, `scoring`, `input` (DAS/ARR), `engine`, `snapshot`              |
+| `src-tauri/src/meta.rs`      | Board geometry, preview shapes, setting limits served by `get_game_meta`                                             |
+| `src-tauri/src/db/`          | `scores`, `settings`                                                                                                 |
+| `src-tauri/src/commands.rs`  | Tauri IPC commands                                                                                                   |
+| `src-tauri/src/game_loop.rs` | 4 ms tick while playing, 50 ms idle; `game-state` emits on the next tick for events, else ≤ 125 Hz, plus `game-over` |
+| `src-tauri/tests/`           | Mirrors `src/` modules                                                                                               |
+| `src/components/`            | Screens and overlays                                                                                                 |
+| `src/components/ui/`         | `Button`, `Card`, `Screen`, `Page`, `Overlay`, `Table`, `Toggle`, `FieldRow` primitives                              |
+| `src/lib/game/`              | `session` (snapshot store + frame/UI subscriptions), `event` (SFX + popups)                                          |
+| `src/lib/`                   | `types`, `ipc`, `keys`, `meta`, `audio`, `render`, `format`, `cx`                                                    |
+| `src/styles.css`             | Tailwind entry: `@theme` tokens, keyframes, base layer                                                               |
 
 ## Runtime
 

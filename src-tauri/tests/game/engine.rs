@@ -83,6 +83,23 @@ fn versions_are_monotonic_across_games() {
 }
 
 #[test]
+fn events_are_queued_until_a_snapshot_takes_them() {
+    let mut game = playing_game(2);
+    game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
+    game.apply(InputAction::HardDrop);
+    assert!(game.has_events());
+    let snapshot = game.snapshot();
+    assert!(
+        snapshot
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::LineClear { .. }))
+    );
+    assert!(!game.has_events());
+}
+
+#[test]
 fn countdown_blocks_input_then_expires() {
     let mut game = Game::new(seeded_config(1));
     let x = active_x(&game);

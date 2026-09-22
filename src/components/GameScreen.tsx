@@ -131,6 +131,7 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
               <div
                 key={popup.id}
                 className="absolute flex animate-popup flex-col items-center gap-0.5 [text-shadow:0_2px_12px_rgb(0_0_0/0.8)]"
+                style={{ willChange: "transform, opacity" }}
               >
                 <span
                   className={cx(

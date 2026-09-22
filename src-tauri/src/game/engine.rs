@@ -158,6 +158,11 @@ impl Game {
         self.version
     }
 
+    /// True while input-driven events are queued for the next snapshot.
+    pub fn has_events(&self) -> bool {
+        !self.events.is_empty()
+    }
+
     pub fn config(&self) -> &GameConfig {
         &self.config
     }

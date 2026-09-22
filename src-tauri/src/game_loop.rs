@@ -41,7 +41,9 @@ fn run(app: AppHandle) {
                     if !is_over {
                         over_handled = false;
                     }
-                    if game.version() != emitted_version && now - last_emit >= MIN_EMIT_INTERVAL {
+                    if game.version() != emitted_version
+                        && (game.has_events() || now - last_emit >= MIN_EMIT_INTERVAL)
+                    {
                         emitted_version = game.version();
                         last_emit = now;
                         snapshot = Some(game.snapshot());
