@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <clipPath id="tile-clip">
+      <rect x="100" y="100" width="824" height="824" rx="185" />
+    </clipPath>
+
+    <!-- Flat color bands, 20 units each in glyph space -->
+    <clipPath id="band-1"><rect x="0" y="0" width="68" height="20" /></clipPath>
+    <clipPath id="band-2"><rect x="0" y="20" width="68" height="20" /></clipPath>
+    <clipPath id="band-3"><rect x="0" y="40" width="68" height="20" /></clipPath>
+    <clipPath id="band-4"><rect x="0" y="60" width="68" height="20" /></clipPath>
+    <clipPath id="band-5"><rect x="0" y="80" width="68" height="20" /></clipPath>
+
+    <!-- Blocky "R" monogram, local glyph space 68 x 100, colored via the bands -->
+    <g
+      id="r-glyph"
+      fill="none"
+      stroke-width="24"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 56V12H34A22 22 0 0 1 56 34A22 22 0 0 1 34 56Z" />
+      <path d="M12 12V88" />
+      <path d="M25 56L56 88" />
+    </g>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#0b0d14" />
+
+  <g clip-path="url(#tile-clip)">
+    <!-- Board grid -->
+    <g stroke="#ffffff" stroke-width="2" opacity="0.07">
+      <path d="M164 100V924 M228 100V924 M292 100V924 M356 100V924 M420 100V924 M484 100V924 M548 100V924 M612 100V924 M676 100V924 M740 100V924 M804 100V924 M868 100V924" />
+      <path d="M100 164H924 M100 228H924 M100 292H924 M100 356H924 M100 420H924 M100 484H924 M100 548H924 M100 612H924 M100 676H924 M100 740H924 M100 804H924 M100 868H924" />
+    </g>
+
+    <g transform="translate(294.4 192) scale(6.4)">
+      <g clip-path="url(#band-1)"><use href="#r-glyph" stroke="#22d3ee" /></g>
+      <g clip-path="url(#band-2)"><use href="#r-glyph" stroke="#60a5fa" /></g>
+      <g clip-path="url(#band-3)"><use href="#r-glyph" stroke="#c084fc" /></g>
+      <g clip-path="url(#band-4)"><use href="#r-glyph" stroke="#fb923c" /></g>
+      <g clip-path="url(#band-5)"><use href="#r-glyph" stroke="#facc15" /></g>
+    </g>
+  </g>
+
+  <rect x="101" y="101" width="822" height="822" rx="184" stroke="#ffffff" stroke-width="2" opacity="0.09" />
+</svg>

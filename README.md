@@ -19,6 +19,7 @@ Tetris. Rust engine + SQLite persistence (Tauri 2), React 19 + canvas frontend.
 bun install                      # frontend deps
 bun tauri dev                    # run app (hot reload)
 bun tauri build                  # bundle release app
+bun tauri icon app-icon.svg      # regenerate src-tauri/icons from the logo
 bun run typecheck                # tsc
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
@@ -64,6 +65,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 
 | Path                         | Value                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `app-icon.svg`               | Logo source; `bun tauri icon app-icon.svg` regenerates `src-tauri/icons/`                   |
 | `src-tauri/src/game/`        | `piece` (shapes, kicks), `board`, `bag`, `scoring`, `input` (DAS/ARR), `engine`, `snapshot` |
 | `src-tauri/src/db/`          | `scores`, `settings`, `stats`                                                               |
 | `src-tauri/src/commands.rs`  | Tauri IPC commands                                                                          |
