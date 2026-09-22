@@ -29,6 +29,17 @@ pub struct PieceView {
     pub cells: [[i32; 2]; 4],
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClearFlash {
+    /// Row indices that are clearing, relative to the visible board.
+    pub rows: Vec<usize>,
+    /// Milliseconds elapsed in the clear animation.
+    pub elapsed_ms: u64,
+    /// Total duration of the clear animation.
+    pub duration_ms: u64,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
@@ -55,5 +66,6 @@ pub struct Snapshot {
     pub gravity_ms: u64,
     pub lock_progress: f32,
     pub last_clear: Option<ClearResult>,
+    pub clear_flash: Option<ClearFlash>,
     pub events: Vec<GameEvent>,
 }

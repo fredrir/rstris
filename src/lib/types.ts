@@ -23,20 +23,22 @@ export type GameEvent =
   | { type: "level_up"; level: number }
   | { type: "game_over" };
 
-export type Phase =
-  | { kind: "playing" }
-  | { kind: "clearing"; rows: number[]; remainingMs: number }
-  | { kind: "game_over" };
+export type Phase = { kind: "playing" } | { kind: "game_over" };
 
 export interface PieceView {
   kind: Tetromino;
   cells: Point[];
 }
 
+export interface ClearFlash {
+  rows: number[];
+  elapsedMs: number;
+  durationMs: number;
+}
+
 export interface Snapshot {
   version: number;
   boardVersion: number;
-  /** Flat row-major visible cells: 0 empty, 1..=7 tetromino. */
   board: number[];
   active: PieceView | null;
   ghost: Point[] | null;
@@ -57,6 +59,7 @@ export interface Snapshot {
   gravityMs: number;
   lockProgress: number;
   lastClear: ClearResult | null;
+  clearFlash: ClearFlash | null;
   events: GameEvent[];
 }
 
@@ -128,7 +131,6 @@ export interface GameMeta {
   boardWidth: number;
   boardHeight: number;
   hiddenRows: number;
-  clearAnimationMs: number;
   previewShapes: PieceShape[];
   limits: SettingLimit[];
 }

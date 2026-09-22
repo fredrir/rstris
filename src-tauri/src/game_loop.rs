@@ -9,7 +9,7 @@ use crate::state::AppState;
 pub const GAME_STATE_EVENT: &str = "game-state";
 const TICK: Duration = Duration::from_millis(4);
 const IDLE_TICK: Duration = Duration::from_millis(50);
-const MIN_EMIT_INTERVAL: Duration = Duration::from_millis(8);
+const MIN_EMIT_INTERVAL: Duration = Duration::from_millis(16);
 
 pub fn spawn(app: AppHandle) {
     thread::Builder::new()

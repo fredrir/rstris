@@ -12,4 +12,5 @@ fn snapshot_serializes_board_as_flat_cell_codes() {
     assert!(board.iter().all(|cell| cell.is_u64()));
     assert!(value["boardVersion"].is_u64());
     assert!(value["version"].is_u64());
+    assert_eq!(value["phase"]["kind"], "playing");
 }

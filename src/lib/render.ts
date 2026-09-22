@@ -1,5 +1,5 @@
 import { gameMeta } from "./meta";
-import type { Point, Snapshot, Tetromino } from "./types";
+import type { ClearFlash, Point, Snapshot, Tetromino } from "./types";
 
 export const COLORS: Record<Tetromino, string> = {
   I: "#22d3ee",
@@ -98,7 +98,7 @@ export function drawBoardStatic(
   ctx: CanvasRenderingContext2D,
   board: number[],
   size: number,
-  clearingRows: number[] | null,
+  clearingRows: number[] | null = null,
 ): void {
   const { boardWidth, boardHeight } = gameMeta();
   const width = boardWidth * size;
@@ -129,33 +129,43 @@ export function drawBoardStatic(
   }
 }
 
-/** Clearing animation, ghost, and active piece. Redrawn every frame. */
+/** Cleared-row shrink animation, drawn over the already-collapsed board. */
+export function drawClearFlash(
+  ctx: CanvasRenderingContext2D,
+  board: number[],
+  flash: ClearFlash,
+  size: number,
+): void {
+  const { boardWidth, boardHeight } = gameMeta();
+  const progress = flash.durationMs > 0 ? Math.min(1, flash.elapsedMs / flash.durationMs) : 1;
+  const shrink = Math.max(0, 1 - progress * 1.05);
+  const alpha = Math.max(0.15, shrink);
+  const white = Math.max(0, 0.9 - progress);
+  const cellSize = size * shrink;
+  const offset = (size - cellSize) / 2;
+  for (const y of flash.rows) {
+    if (y < 0 || y >= boardHeight) continue;
+    for (let x = 0; x < boardWidth; x++) {
+      const code = board[y * boardWidth + x];
+      if (!code) continue;
+      drawCell(ctx, x * size + offset, y * size + offset, cellSize, CELL_COLORS[code] ?? "#fff", {
+        flash: white,
+        alpha,
+      });
+    }
+  }
+}
+
+/** Clear flash, ghost, and active piece. Redrawn every frame. */
 export function drawBoardDynamic(
   ctx: CanvasRenderingContext2D,
   snapshot: Snapshot,
   size: number,
 ): void {
-  const { boardWidth, boardHeight, hiddenRows, clearAnimationMs } = gameMeta();
+  const { boardWidth, boardHeight } = gameMeta();
   ctx.clearRect(0, 0, boardWidth * size, boardHeight * size);
 
-  if (snapshot.phase.kind === "clearing") {
-    const progress = 1 - snapshot.phase.remainingMs / clearAnimationMs;
-    for (const row of snapshot.phase.rows) {
-      const y = row - hiddenRows;
-      if (y < 0 || y >= boardHeight) continue;
-      for (let x = 0; x < boardWidth; x++) {
-        const code = snapshot.board[y * boardWidth + x];
-        if (code === 0) continue;
-        const shrink = Math.max(0, 1 - progress * 1.05);
-        const cellSize = size * shrink;
-        const offset = (size - cellSize) / 2;
-        drawCell(ctx, x * size + offset, y * size + offset, cellSize, CELL_COLORS[code] ?? "#fff", {
-          flash: Math.max(0, 0.9 - progress),
-          alpha: Math.max(0.15, shrink),
-        });
-      }
-    }
-  }
+  if (snapshot.clearFlash) drawClearFlash(ctx, snapshot.board, snapshot.clearFlash, size);
 
   if (snapshot.ghost && snapshot.active) {
     drawPiece(ctx, snapshot.active.kind, snapshot.ghost, size, 0, 0, { ghost: true });

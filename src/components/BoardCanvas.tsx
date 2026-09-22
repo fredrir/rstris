@@ -4,6 +4,7 @@ import { cx } from "../lib/cx";
 import { gameSession } from "../lib/game/session";
 import { gameMeta } from "../lib/meta";
 import { drawBoardDynamic, drawBoardStatic, setupCanvas } from "../lib/render";
+import type { Snapshot } from "../lib/types";
 
 interface Props {
   className?: string;
@@ -16,7 +17,7 @@ export function BoardCanvas({ className = "", children }: Props) {
   const dynamicRef = useRef<HTMLCanvasElement>(null);
   const staticKey = useRef("");
   const [cell, setCell] = useState(30);
-  const { boardWidth, boardHeight, hiddenRows } = gameMeta();
+  const { boardWidth, boardHeight } = gameMeta();
 
   useLayoutEffect(() => {
     const element = measureRef.current;
@@ -42,30 +43,39 @@ export function BoardCanvas({ className = "", children }: Props) {
     const dynamicCtx = setupCanvas(dynamicCanvas, width, height);
     if (!staticCtx || !dynamicCtx) return;
     staticKey.current = "";
-    let drawnVersion = -1;
-    // Draw straight from the event callback instead of deferring to rAF: the
-    // browser still composites on vsync, but an event that lands after the
-    // current frame's rAF callbacks would otherwise wait a full frame.
-    const draw = () => {
-      const snapshot = gameSession.getSnapshot();
-      if (!snapshot || snapshot.version === drawnVersion) return;
-      drawnVersion = snapshot.version;
-      const clearing =
-        snapshot.phase.kind === "clearing"
-          ? snapshot.phase.rows
-              .map((row) => row - hiddenRows)
-              .filter((row) => row >= 0 && row < boardHeight)
-          : null;
-      const key = `${snapshot.boardVersion}:${clearing ? clearing.join(",") : ""}`;
+    let frameId = 0;
+
+    const paint = (snapshot: Snapshot) => {
+      // The board stays pre-collapse while the engine animates the clear, so
+      // the rows it reports are hidden from the static layer until it settles.
+      const rows = snapshot.clearFlash?.rows ?? null;
+      const key = `${snapshot.boardVersion}:${rows ? rows.join(",") : ""}`;
       if (key !== staticKey.current) {
-        drawBoardStatic(staticCtx, snapshot.board, cell, clearing);
+        drawBoardStatic(staticCtx, snapshot.board, cell, rows);
         staticKey.current = key;
       }
       drawBoardDynamic(dynamicCtx, snapshot, cell);
     };
-    draw();
-    return gameSession.subscribeFrame(draw);
-  }, [boardHeight, boardWidth, cell, hiddenRows]);
+
+    // Coalesce to the display refresh; the engine drives the clear animation
+    // and emits progress, so this just paints the latest snapshot.
+    const frame = () => {
+      frameId = 0;
+      const snapshot = gameSession.getSnapshot();
+      if (snapshot) paint(snapshot);
+    };
+
+    const schedule = () => {
+      if (!frameId) frameId = requestAnimationFrame(frame);
+    };
+
+    schedule();
+    const unsubscribe = gameSession.subscribeFrame(schedule);
+    return () => {
+      unsubscribe();
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, [boardHeight, boardWidth, cell]);
 
   return (
     <div className="grid min-h-0 min-w-0 flex-1 place-items-center" ref={measureRef}>

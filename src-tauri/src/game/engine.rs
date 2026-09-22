@@ -10,7 +10,7 @@ use super::config::GameConfig;
 use super::input::{AutoShift, Horizontal, InputAction};
 use super::piece::{Rotation, Tetromino, kicks};
 use super::scoring::{ClearResult, Scoring, SpinKind};
-use super::snapshot::{GameEvent, PieceView, Snapshot};
+use super::snapshot::{ClearFlash, GameEvent, PieceView, Snapshot};
 
 pub const COUNTDOWN: Duration = Duration::from_millis(1500);
 pub const CLEAR_ANIMATION: Duration = Duration::from_millis(280);
@@ -18,10 +18,6 @@ pub const MAX_LOCK_RESETS: u32 = 15;
 const QUEUE_LEN: usize = 7;
 const MAX_STEP: Duration = Duration::from_millis(50);
 const LOCK_PROGRESS_STEPS: u32 = 20;
-
-/// Process-wide monotonic version counter. Versions never restart when a new
-/// game is created, so stale events from a replaced game are always older than
-/// the current one.
 static NEXT_VERSION: AtomicU64 = AtomicU64::new(1);
 
 fn next_version() -> u64 {
@@ -46,7 +42,7 @@ impl ActivePiece {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
     rename_all = "snake_case",
@@ -54,7 +50,6 @@ impl ActivePiece {
 )]
 pub enum Phase {
     Playing,
-    Clearing { rows: Vec<usize>, remaining_ms: u64 },
     GameOver,
 }
 
@@ -71,6 +66,13 @@ struct LockState {
     elapsed: Duration,
     resets: u32,
     lowest_y: i32,
+}
+
+#[derive(Debug, Clone)]
+struct ClearDelay {
+    /// Absolute rows to collapse when the delay ends.
+    rows: Vec<usize>,
+    elapsed_ms: u64,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -112,6 +114,7 @@ pub struct Game {
     tspins: u32,
     perfect_clears: u32,
     last_clear: Option<ClearResult>,
+    clear_delay: Option<ClearDelay>,
     events: Vec<GameEvent>,
     version: u64,
     board_version: u64,
@@ -145,6 +148,7 @@ impl Game {
             tspins: 0,
             perfect_clears: 0,
             last_clear: None,
+            clear_delay: None,
             events: Vec::new(),
             version: next_version(),
             board_version: 1,
@@ -270,25 +274,22 @@ impl Game {
         if self.elapsed.as_secs() != seconds_before {
             self.touch();
         }
-        match self.phase.clone() {
-            Phase::Playing => self.update_playing(dt),
-            Phase::Clearing { rows, remaining_ms } => {
-                match Duration::from_millis(remaining_ms).checked_sub(dt) {
-                    Some(remaining) if !remaining.is_zero() => {
-                        self.phase = Phase::Clearing {
-                            rows,
-                            remaining_ms: remaining.as_millis() as u64,
-                        };
-                    }
-                    _ => {
-                        self.board.clear_rows(&rows);
-                        self.board_version += 1;
-                        self.phase = Phase::Playing;
-                        self.spawn_next();
-                    }
-                }
+        let clear_expired = match &mut self.clear_delay {
+            Some(delay) => {
+                delay.elapsed_ms += dt.as_millis() as u64;
+                delay.elapsed_ms >= CLEAR_ANIMATION.as_millis() as u64
+            }
+            None => false,
+        };
+        if self.clear_delay.is_some() {
+            if clear_expired {
+                self.resolve_clear_delay();
+            } else {
                 self.touch();
             }
+        }
+        match self.phase {
+            Phase::Playing => self.update_playing(dt),
             Phase::GameOver => {}
         }
     }
@@ -366,7 +367,7 @@ impl Game {
             lines_to_next_level: self.scoring.lines_to_next_level(),
             combo: self.scoring.combo(),
             back_to_back: self.scoring.back_to_back(),
-            phase: self.phase.clone(),
+            phase: self.phase,
             paused: self.paused,
             countdown_ms: self.countdown.map(|d| d.as_millis() as u64),
             elapsed_ms: self.elapsed.as_millis() as u64,
@@ -374,6 +375,16 @@ impl Game {
             gravity_ms: self.scoring.gravity().as_millis() as u64,
             lock_progress: self.lock_progress(),
             last_clear: self.last_clear.clone(),
+            clear_flash: self.clear_delay.as_ref().map(|delay| ClearFlash {
+                rows: delay
+                    .rows
+                    .iter()
+                    .filter(|&&row| row >= HIDDEN_ROWS)
+                    .map(|&row| row - HIDDEN_ROWS)
+                    .collect(),
+                elapsed_ms: delay.elapsed_ms,
+                duration_ms: CLEAR_ANIMATION.as_millis() as u64,
+            }),
             events: std::mem::take(&mut self.events),
         }
     }
@@ -437,6 +448,11 @@ impl Game {
                     break;
                 }
             }
+        }
+        // Movement and rotation stay live during the clear animation, but the
+        // board is still pre-collapse, so gravity and locking wait for it.
+        if self.clear_delay.is_some() {
+            return;
         }
         let interval = self.fall_interval();
         self.gravity_acc += dt;
@@ -574,6 +590,9 @@ impl Game {
     }
 
     fn hard_drop(&mut self) {
+        // Skipping the animation collapses first; the new piece is still at the
+        // top because gravity was held during the clear.
+        self.resolve_clear_delay();
         let Some(piece) = self.active else { return };
         let distance = self.drop_distance(&piece);
         if distance > 0 {
@@ -642,15 +661,22 @@ impl Game {
         if let Some(level) = outcome.level_up {
             self.push(GameEvent::LevelUp { level });
         }
-        if rows.is_empty() {
-            self.spawn_next();
-        } else {
-            self.phase = Phase::Clearing {
+        if !rows.is_empty() {
+            self.clear_delay = Some(ClearDelay {
                 rows,
-                remaining_ms: CLEAR_ANIMATION.as_millis() as u64,
-            };
+                elapsed_ms: 0,
+            });
         }
+        self.spawn_next();
         self.touch();
+    }
+
+    fn resolve_clear_delay(&mut self) {
+        if let Some(delay) = self.clear_delay.take() {
+            self.board.clear_rows(&delay.rows);
+            self.board_version += 1;
+            self.touch();
+        }
     }
 
     fn detect_spin(&self, piece: &ActivePiece) -> SpinKind {
@@ -701,7 +727,13 @@ impl Game {
             lowest_y: y,
         };
         self.last_move = LastMove::None;
-        let fits = self.board.fits(&piece.cells());
+        let mut fits = self.board.fits(&piece.cells());
+        if !fits && self.clear_delay.is_some() {
+            // The rows still animating are about to open space; settle them
+            // before declaring a block-out on the pre-clear stack.
+            self.resolve_clear_delay();
+            fits = self.board.fits(&piece.cells());
+        }
         self.active = Some(piece);
         self.touch();
         if !fits {
@@ -710,6 +742,7 @@ impl Game {
     }
 
     fn game_over(&mut self) {
+        self.resolve_clear_delay();
         self.phase = Phase::GameOver;
         self.shift.release_all();
         self.push(GameEvent::GameOver);

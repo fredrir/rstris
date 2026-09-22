@@ -67,11 +67,10 @@ fn board_version_advances_only_when_settled_cells_change() {
 fn board_version_advances_when_rows_clear() {
     let mut game = playing_game(2);
     game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    let before = game.snapshot().board_version;
     game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
     game.apply(InputAction::HardDrop);
-    let locked = game.snapshot().board_version;
-    advance(&mut game, CLEAR_ANIMATION.as_millis() as u64 + 20);
-    assert!(game.snapshot().board_version > locked);
+    assert!(game.snapshot().board_version > before);
 }
 
 #[test]
@@ -244,25 +243,85 @@ fn hold_can_be_disabled() {
 }
 
 #[test]
-fn line_clear_runs_animation_then_collapses() {
+fn line_clear_spawns_next_piece_immediately_then_collapses() {
     let mut game = playing_game(2);
     game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
     game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
     game.apply(InputAction::HardDrop);
     let snapshot = game.snapshot();
-    assert!(matches!(snapshot.phase, Phase::Clearing { ref rows, .. } if rows == &vec![22, 23]));
+    assert_eq!(snapshot.phase, Phase::Playing);
     assert_eq!(snapshot.lines, 2);
     assert_eq!(snapshot.last_clear.as_ref().unwrap().label, "DOUBLE");
+    assert!(snapshot.clear_flash.is_some());
     assert!(
         snapshot
             .events
             .iter()
             .any(|e| matches!(e, GameEvent::LineClear { .. }))
     );
+    // Rows keep rendering until the animation ends...
+    assert!(!game.board().is_empty());
+    // ...while the next piece is already live and movable, with gravity held.
+    let spawned = game.active().expect("spawned piece");
+    advance(&mut game, 100);
+    assert_eq!(game.active().unwrap().y, spawned.y);
+    game.apply(InputAction::LeftPress);
+    assert_eq!(game.active().unwrap().x, spawned.x - 1);
     advance(&mut game, CLEAR_ANIMATION.as_millis() as u64 + 20);
-    assert_eq!(*game.phase(), Phase::Playing);
     assert!(game.board().is_empty());
     assert!(game.active().is_some());
+}
+
+#[test]
+fn hard_drop_during_clear_settles_the_rows_first() {
+    let mut game = playing_game(2);
+    game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
+    game.apply(InputAction::HardDrop);
+    // Second hard drop lands the spawned piece on the collapsed board.
+    game.apply(InputAction::HardDrop);
+    let filled = game
+        .board()
+        .rows()
+        .iter()
+        .flat_map(|row| row.iter())
+        .filter(|cell| cell.is_some())
+        .count();
+    assert_eq!(filled, 4);
+    assert!(game.active().is_some());
+}
+
+#[test]
+fn clear_flash_tracks_visible_rows_and_elapsed_time() {
+    let mut game = playing_game(2);
+    game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
+    game.apply(InputAction::HardDrop);
+    let flash = game.snapshot().clear_flash.expect("clear flash");
+    assert_eq!(flash.rows, vec![VISIBLE_HEIGHT - 2, VISIBLE_HEIGHT - 1]);
+    assert_eq!(flash.elapsed_ms, 0);
+    assert_eq!(flash.duration_ms, CLEAR_ANIMATION.as_millis() as u64);
+
+    // The flash keeps reporting progress on later snapshots instead of being
+    // consumed, so a dropped frame cannot lose the animation.
+    advance(&mut game, 100);
+    let later = game.snapshot().clear_flash.expect("flash still active");
+    assert_eq!(later.rows, flash.rows);
+    assert!(later.elapsed_ms >= 100);
+
+    advance(&mut game, CLEAR_ANIMATION.as_millis() as u64 + 20);
+    assert!(game.snapshot().clear_flash.is_none());
+}
+
+#[test]
+fn clear_animation_keeps_the_version_moving_for_frames() {
+    let mut game = playing_game(2);
+    game.set_board(board_from(&["LLLLLLLL..", "LLLLLLLL.."]));
+    game.set_active(piece(Tetromino::O, Rotation::Spawn, 7, 0));
+    game.apply(InputAction::HardDrop);
+    let before = game.version();
+    game.update(Duration::from_millis(10));
+    assert!(game.version() > before);
 }
 
 #[test]
@@ -341,7 +400,6 @@ fn level_up_after_ten_lines_emits_event() {
     for _ in 0..2 {
         game.set_active(piece(Tetromino::I, Rotation::Right, 7, 0));
         game.apply(InputAction::HardDrop);
-        advance(&mut game, CLEAR_ANIMATION.as_millis() as u64 + 20);
     }
     game.set_active(piece(Tetromino::I, Rotation::Right, 7, 0));
     game.apply(InputAction::HardDrop);

@@ -1,7 +1,7 @@
 import { api, onGameState } from "../ipc";
 import type { Snapshot, Tetromino } from "../types";
 
-export type PhaseKind = "playing" | "clearing" | "game_over";
+export type PhaseKind = "playing" | "game_over";
 
 /** Derived state the React chrome renders. Recreated only when a field changes. */
 export interface GameUi {
