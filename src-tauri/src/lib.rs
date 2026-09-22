@@ -1,14 +1,45 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+pub mod commands;
+pub mod db;
+pub mod error;
+pub mod game;
+pub mod game_loop;
+pub mod settings;
+pub mod state;
+
+use tauri::Manager;
+
+use db::Database;
+use state::AppState;
+
+pub const DB_FILE_NAME: &str = "rstris.sqlite3";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            let path = app.path().app_data_dir()?.join(DB_FILE_NAME);
+            let db = Database::open(&path)?;
+            let settings = db.load_settings()?.unwrap_or_default();
+            app.manage(AppState::new(path, db, settings));
+            game_loop::spawn(app.handle().clone());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::get_settings,
+            commands::save_settings,
+            commands::reset_settings,
+            commands::get_high_scores,
+            commands::clear_high_scores,
+            commands::get_stats,
+            commands::new_game,
+            commands::game_input,
+            commands::get_game_state,
+            commands::end_game,
+            commands::game_over_info,
+            commands::submit_score,
+            commands::get_db_path,
+            commands::quit,
+        ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("failed to run rstris");
 }

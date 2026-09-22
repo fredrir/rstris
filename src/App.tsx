@@ -1,51 +1,114 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+import { GameScreen } from "./components/GameScreen";
+import { HighScoresScreen } from "./components/HighScoresScreen";
+import { MainMenu } from "./components/MainMenu";
+import { SettingsScreen } from "./components/SettingsScreen";
+import { sfx } from "./lib/audio";
+import { api } from "./lib/ipc";
+import type { Settings } from "./lib/types";
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+type Screen = "menu" | "game" | "scores" | "settings";
+
+const SAVE_DEBOUNCE_MS = 200;
+
+export default function App() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [screen, setScreen] = useState<Screen>("menu");
+  const [settingsOverGame, setSettingsOverGame] = useState(false);
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [dbPath, setDbPath] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const saveTimer = useRef<number | null>(null);
+  const saveSequence = useRef(0);
+
+  useEffect(() => {
+    api
+      .getSettings()
+      .then(setSettings)
+      .catch((e) => setError(String(e)));
+    api.getDbPath().then(setDbPath).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (settings) sfx.configure(settings.soundEnabled, settings.soundVolume);
+  }, [settings]);
+
+  const updateSettings = useCallback((next: Settings) => {
+    setSettings(next);
+    if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
+    const sequence = ++saveSequence.current;
+    saveTimer.current = window.setTimeout(() => {
+      api
+        .saveSettings(next)
+        .then((saved) => {
+          if (sequence === saveSequence.current) setSettings(saved);
+        })
+        .catch((e) => setError(String(e)));
+    }, SAVE_DEBOUNCE_MS);
+  }, []);
+
+  const resetSettings = useCallback(() => {
+    saveSequence.current++;
+    api
+      .resetSettings()
+      .then(setSettings)
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  const goMenu = useCallback(() => {
+    setSettingsOverGame(false);
+    setScreen("menu");
+  }, []);
+
+  const goScores = useCallback((id: number | null) => {
+    setHighlightId(id);
+    setSettingsOverGame(false);
+    setScreen("scores");
+  }, []);
+
+  if (error) {
+    return (
+      <div className="screen page">
+        <h2>Something went wrong</h2>
+        <pre className="error">{error}</pre>
+      </div>
+    );
   }
+  if (!settings) return <div className="screen loading">Loading…</div>;
+
+  const settingsView = (
+    <SettingsScreen
+      settings={settings}
+      dbPath={dbPath}
+      onChange={updateSettings}
+      onReset={resetSettings}
+      onBack={() => (screen === "game" ? setSettingsOverGame(false) : setScreen("menu"))}
+    />
+  );
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+    <>
+      {screen === "menu" && (
+        <MainMenu
+          playerName={settings.playerName}
+          onPlay={() => setScreen("game")}
+          onScores={() => goScores(null)}
+          onSettings={() => setScreen("settings")}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      )}
+      {screen === "game" && (
+        <GameScreen
+          settings={settings}
+          inputEnabled={!settingsOverGame}
+          onMenu={goMenu}
+          onScores={goScores}
+          onSettings={() => setSettingsOverGame(true)}
+        />
+      )}
+      {screen === "game" && settingsOverGame && <div className="modal">{settingsView}</div>}
+      {screen === "scores" && <HighScoresScreen highlightId={highlightId} onBack={goMenu} />}
+      {screen === "settings" && settingsView}
+    </>
   );
 }
-
-export default App;

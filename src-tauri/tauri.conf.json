@@ -13,8 +13,13 @@
     "windows": [
       {
         "title": "rstris",
-        "width": 800,
-        "height": 600
+        "width": 1120,
+        "height": 820,
+        "minWidth": 900,
+        "minHeight": 660,
+        "center": true,
+        "theme": "Dark",
+        "backgroundColor": "#0b0d14"
       }
     ],
     "security": {
