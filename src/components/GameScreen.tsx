@@ -4,6 +4,7 @@ import { useGameInput, type InputMode } from "../hooks/useGameInput";
 import { useGameState } from "../hooks/useGameState";
 
 import { sfx } from "../lib/audio";
+import { cx } from "../lib/cx";
 import { handleEvent as dispatchGameEvent, type Popup } from "../lib/game/event";
 import { api, sendInput } from "../lib/ipc";
 import type { GameEvent, GameOverInfo, Settings, SubmitResult } from "../lib/types";
@@ -24,18 +25,12 @@ interface Props {
 
 const POPUP_MS = 1300;
 
-function popupTitleClass(tone: Popup["tone"]) {
-  const size = tone === "big" ? "text-[34px]" : "text-[26px]";
-  const color =
-    tone === "big"
-      ? "text-gold"
-      : tone === "spin"
-        ? "text-accent-2"
-        : tone === "level"
-          ? "text-accent"
-          : "text-ink";
-  return `${size} ${color} font-mono font-extrabold tracking-[0.12em]`;
-}
+const POPUP_TONES: Record<Popup["tone"], string> = {
+  normal: "text-[26px] text-ink",
+  big: "text-[34px] text-gold",
+  spin: "text-[26px] text-accent-2",
+  level: "text-[26px] text-accent",
+};
 
 export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSettings }: Props) {
   const { snapshot, restart } = useGameState();
@@ -134,20 +129,27 @@ export function GameScreen({ settings, inputEnabled, onMenu, onScores, onSetting
           <div className="flex w-full justify-start gap-4">
             <GameStatCard label="Level" value={snapshot.level} />
             <GameStatCard label="Lines" value={snapshot.lines} />
-            <GameStatCard label="Score" textColor="accent" value={snapshot.score} />
+            <GameStatCard label="Score" tone="accent" value={snapshot.score} />
           </div>
         </GameCard>
       </GamePanel>
 
       <main className="flex min-h-0 min-w-0">
-        <BoardCanvas snapshot={snapshot} className={`${levelFlash ? "animate-level-glow" : ""}`}>
+        <BoardCanvas snapshot={snapshot} className={cx(levelFlash && "animate-level-glow")}>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {popups.map((popup) => (
               <div
                 key={popup.id}
                 className="absolute flex animate-popup flex-col items-center gap-0.5 [text-shadow:0_2px_12px_rgb(0_0_0/0.8)]"
               >
-                <span className={popupTitleClass(popup.tone)}>{popup.title}</span>
+                <span
+                  className={cx(
+                    "font-mono font-extrabold tracking-[0.12em]",
+                    POPUP_TONES[popup.tone],
+                  )}
+                >
+                  {popup.title}
+                </span>
                 {popup.lines.map((line) => (
                   <span key={line} className="font-mono text-sm tracking-[0.08em] text-accent">
                     {line}

@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 
+import { cx } from "../lib/cx";
 import { formatDate, formatNumber, formatTime } from "../lib/format";
 import { api } from "../lib/ipc";
 import type { ScoreEntry, Stats } from "../lib/types";
 import { HIGH_SCORE_LIMIT } from "../lib/types";
+import { Button } from "./ui/Button";
+import { Screen } from "./ui/Screen";
+import { Td, Th } from "./ui/Table";
 
 interface Props {
   highlightId: number | null;
@@ -14,18 +18,6 @@ async function fetchHighScores(): Promise<{ scores: ScoreEntry[]; stats: Stats }
   const [scores, stats] = await Promise.all([api.getHighScores(HIGH_SCORE_LIMIT), api.getStats()]);
   return { scores, stats };
 }
-
-const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
-const BUTTON =
-  "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
-const BUTTON_GHOST = `${BUTTON} border-white/10`;
-const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
-const BUTTON_DANGER = `${BUTTON} border-danger/50 text-danger`;
-const TH =
-  "border-b border-white/10 px-3 py-2.25 text-[11px] uppercase tracking-[0.12em] text-muted";
-const TH_NUM = `${TH} text-right font-mono tabular-nums`;
-const TD = "border-b border-white/10 px-3 py-2.25";
-const TD_NUM = `${TD} text-right font-mono tabular-nums`;
 
 export function HighScoresScreen({ highlightId, onBack }: Props) {
   const [scores, setScores] = useState<ScoreEntry[]>([]);
@@ -60,72 +52,59 @@ export function HighScoresScreen({ highlightId, onBack }: Props) {
   };
 
   return (
-    <div className={PAGE}>
-      <header className="flex items-center justify-between">
-        <h2 className="font-mono text-[26px] font-bold tracking-[0.16em] text-accent">
-          High Scores
-        </h2>
-        <div className="flex gap-2">
+    <Screen
+      title="High Scores"
+      actions={
+        <>
           {confirmClear ? (
             <>
-              <button className={BUTTON_DANGER} onClick={() => void clear()}>
+              <Button variant="danger" onClick={() => void clear()}>
                 Confirm clear
-              </button>
-              <button className={BUTTON_GHOST} onClick={() => setConfirmClear(false)}>
-                Cancel
-              </button>
+              </Button>
+              <Button onClick={() => setConfirmClear(false)}>Cancel</Button>
             </>
           ) : (
-            <button
-              className={BUTTON_GHOST}
-              onClick={() => setConfirmClear(true)}
-              disabled={scores.length === 0}
-            >
+            <Button onClick={() => setConfirmClear(true)} disabled={scores.length === 0}>
               Clear all
-            </button>
+            </Button>
           )}
-          <button className={BUTTON_PRIMARY} onClick={onBack}>
+          <Button variant="primary" onClick={onBack}>
             Back
-          </button>
-        </div>
-      </header>
-
+          </Button>
+        </>
+      }
+    >
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className={`${TH} text-left`}>#</th>
-            <th className={`${TH} text-left`}>Name</th>
-            <th className={TH_NUM}>Score</th>
-            <th className={TH_NUM}>Level</th>
-            <th className={TH_NUM}>Lines</th>
-            <th className={TH_NUM}>Time</th>
-            <th className={TH_NUM}>Tetrises</th>
-            <th className={TH_NUM}>T-Spins</th>
-            <th className={`${TH} text-left`}>Date</th>
+            <Th>#</Th>
+            <Th>Name</Th>
+            <Th numeric>Score</Th>
+            <Th numeric>Level</Th>
+            <Th numeric>Lines</Th>
+            <Th numeric>Time</Th>
+            <Th numeric>Tetrises</Th>
+            <Th numeric>T-spins</Th>
+            <Th>Date</Th>
           </tr>
         </thead>
         <tbody>
-          {scores.length === 0
-            ? undefined
-            : scores.map((entry, i) => (
-                <tr
-                  key={entry.id}
-                  className={entry.id === highlightId ? "[&>td]:bg-accent/10" : ""}
-                >
-                  <td className={`${TD} w-10 font-mono ${rankClass(i)}`}>{i + 1}</td>
-                  <td className={TD}>{entry.name}</td>
-                  <td className={TD_NUM}>{formatNumber(entry.score)}</td>
-                  <td className={TD_NUM}>{entry.level}</td>
-                  <td className={TD_NUM}>{entry.lines}</td>
-                  <td className={TD_NUM}>{formatTime(entry.durationMs)}</td>
-                  <td className={TD_NUM}>{entry.tetrises}</td>
-                  <td className={TD_NUM}>{entry.tspins}</td>
-                  <td className={TD}>{formatDate(entry.playedAt)}</td>
-                </tr>
-              ))}
+          {scores.map((entry, i) => (
+            <tr key={entry.id} className={cx(entry.id === highlightId && "[&>td]:bg-accent/10")}>
+              <Td className={cx("w-10 font-mono", rankClass(i))}>{i + 1}</Td>
+              <Td>{entry.name}</Td>
+              <Td numeric>{formatNumber(entry.score)}</Td>
+              <Td numeric>{entry.level}</Td>
+              <Td numeric>{entry.lines}</Td>
+              <Td numeric>{formatTime(entry.durationMs)}</Td>
+              <Td numeric>{entry.tetrises}</Td>
+              <Td numeric>{entry.tspins}</Td>
+              <Td>{formatDate(entry.playedAt)}</Td>
+            </tr>
+          ))}
         </tbody>
       </table>
-    </div>
+    </Screen>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
+import { cx } from "../lib/cx";
 import { drawBoard, setupCanvas } from "../lib/render";
 import { BOARD_HEIGHT, BOARD_WIDTH, type Snapshot } from "../lib/types";
 
@@ -38,7 +39,10 @@ export function BoardCanvas({ snapshot, className = "", children }: Props) {
   return (
     <div className="grid min-h-0 min-w-0 flex-1 place-items-center" ref={measureRef}>
       <div
-        className={`relative overflow-hidden rounded-md border-2 border-white/12 transition-[filter] duration-400 ${className}`}
+        className={cx(
+          "relative overflow-hidden rounded-md border-2 border-white/12 transition-[filter] duration-400",
+          className,
+        )}
         style={{ width: BOARD_WIDTH * cell, height: BOARD_HEIGHT * cell }}
       >
         <canvas ref={canvasRef} className="block" />

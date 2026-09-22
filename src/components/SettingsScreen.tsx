@@ -1,6 +1,13 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
+
+import { cx } from "../lib/cx";
 import { ACTIONS, assignKey, keyLabel, type ActionId } from "../lib/keys";
 import type { Settings } from "../lib/types";
+import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
+import { FieldRow } from "./ui/FieldRow";
+import { Screen } from "./ui/Screen";
+import { Toggle } from "./ui/Toggle";
 
 interface Props {
   settings: Settings;
@@ -13,15 +20,6 @@ interface Capture {
   id: ActionId;
   slot: number;
 }
-
-const PAGE = "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
-const CARD = "border border-white/10 px-3.5 py-3";
-const H3 = "mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted";
-const BUTTON =
-  "cursor-pointer border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10";
-const BUTTON_GHOST = `${BUTTON} border-white/10`;
-const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
-const BUTTON_DANGER = `${BUTTON} border-danger/50 text-danger`;
 
 export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
   const [capture, setCapture] = useState<Capture | null>(null);
@@ -72,35 +70,32 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
   };
 
   return (
-    <div className={PAGE}>
-      <header className="flex items-center justify-between">
-        <h2 className="font-mono text-[26px] font-bold tracking-[0.16em] text-accent">Settings</h2>
-        <div className="flex gap-2">
-          <button className={confirmReset ? BUTTON_DANGER : BUTTON_GHOST} onClick={setReset}>
+    <Screen
+      title="Settings"
+      actions={
+        <>
+          <Button variant={confirmReset ? "danger" : "default"} onClick={setReset}>
             {confirmReset ? "Confirm reset" : "Reset"}
-          </button>
-
-          <button className={BUTTON_PRIMARY} onClick={onBack}>
+          </Button>
+          <Button variant="primary" onClick={onBack}>
             Back
-          </button>
-        </div>
-      </header>
-
+          </Button>
+        </>
+      }
+    >
       <div className="grid grid-cols-2 gap-3.5">
-        <section className={CARD}>
-          <h3 className={H3}>Player</h3>
-          <Row label="Name">
+        <Card title="Player">
+          <FieldRow label="Name">
             <input
               className="w-50 border-0 border-b border-b-white/10 px-2.5 py-1.5 select-text focus:border-b-accent focus:ring-0 focus:outline-none"
               maxLength={16}
               value={settings.playerName}
               onChange={(event) => set("playerName", event.target.value)}
             />
-          </Row>
-        </section>
+          </FieldRow>
+        </Card>
 
-        <section className={CARD}>
-          <h3 className={H3}>Gameplay</h3>
+        <Card title="Gameplay">
           <NumberRow
             label="Start level"
             value={settings.startLevel}
@@ -115,20 +110,23 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
             max={6}
             onChange={(v) => set("nextCount", v)}
           />
-          <ToggleRow
-            label="Ghost piece"
-            value={settings.ghostPiece}
-            onChange={(v) => set("ghostPiece", v)}
-          />
-          <ToggleRow
-            label="Hold piece"
-            value={settings.holdEnabled}
-            onChange={(v) => set("holdEnabled", v)}
-          />
-        </section>
+          <FieldRow label="Ghost piece">
+            <Toggle
+              label="Ghost piece"
+              value={settings.ghostPiece}
+              onChange={(v) => set("ghostPiece", v)}
+            />
+          </FieldRow>
+          <FieldRow label="Hold piece">
+            <Toggle
+              label="Hold piece"
+              value={settings.holdEnabled}
+              onChange={(v) => set("holdEnabled", v)}
+            />
+          </FieldRow>
+        </Card>
 
-        <section className={CARD}>
-          <h3 className={H3}>Handling</h3>
+        <Card title="Handling">
           <NumberRow
             label="DAS"
             unit="ms"
@@ -164,15 +162,16 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
             step={50}
             onChange={(v) => set("lockDelayMs", v)}
           />
-        </section>
+        </Card>
 
-        <section className={CARD}>
-          <h3 className={H3}>Audio</h3>
-          <ToggleRow
-            label="Sound effects"
-            value={settings.soundEnabled}
-            onChange={(v) => set("soundEnabled", v)}
-          />
+        <Card title="Audio">
+          <FieldRow label="Sound effects">
+            <Toggle
+              label="Sound effects"
+              value={settings.soundEnabled}
+              onChange={(v) => set("soundEnabled", v)}
+            />
+          </FieldRow>
           <NumberRow
             label="Volume"
             unit="%"
@@ -182,79 +181,39 @@ export function SettingsScreen({ settings, onChange, onReset, onBack }: Props) {
             step={5}
             onChange={(v) => set("soundVolume", v)}
           />
-        </section>
+        </Card>
 
-        <section className={`${CARD} col-span-full`}>
-          <h3 className={H3}>Controls</h3>
+        <Card title="Controls" className="col-span-full">
           <div className="grid grid-cols-2 gap-x-10">
             {ACTIONS.map(({ id, label }) => (
-              <Row key={id} label={label}>
+              <FieldRow key={id} label={label}>
                 <div className="flex gap-1.5">
                   {[0, 1].map((slot) => {
                     const code = settings.keys[id][slot];
                     const active = capture?.id === id && capture.slot === slot;
                     return (
-                      <button
+                      <Button
                         key={slot}
-                        className={[
-                          "min-w-20.5 cursor-pointer rounded-md border bg-white/5 px-2.5 py-1.25 font-mono",
+                        size="sm"
+                        className={cx(
+                          "min-w-20.5 font-mono",
                           active
                             ? "animate-pulse-fast border-accent text-accent"
-                            : `border-white/10 ${code ? "" : "text-muted"}`,
-                        ].join(" ")}
+                            : !code && "text-muted",
+                        )}
                         onClick={() => setCapture({ id, slot })}
                       >
                         {active ? "press key…" : code ? keyLabel(code) : "+"}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
-              </Row>
+              </FieldRow>
             ))}
           </div>
-        </section>
+        </Card>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-1">
-      <span className="text-ink">{label}</span>
-      <div className="flex flex-1 items-center justify-end">{children}</div>
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <Row label={label}>
-      <button
-        className={[
-          "inline-flex cursor-pointer items-center gap-2 rounded-full border py-1 pr-2.5 pl-1",
-          value ? "border-accent/50 text-accent" : "border-white/10 text-muted",
-        ].join(" ")}
-        role="switch"
-        aria-checked={value}
-        onClick={() => onChange(!value)}
-      >
-        <span
-          className={`size-4.5 rounded-full transition-[background-color,transform] duration-100 ${
-            value ? "bg-accent" : "bg-muted"
-          }`}
-        />
-        <span className="w-6 text-left">{value ? "On" : "Off"}</span>
-      </button>
-    </Row>
+    </Screen>
   );
 }
 
@@ -271,15 +230,15 @@ interface NumberRowProps {
 function NumberRow({ label, value, min, max, step = 1, unit = "", onChange }: NumberRowProps) {
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
-    <Row label={label}>
+    <FieldRow label={label}>
       <div className="flex items-center gap-2">
-        <button
-          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/12"
+        <Button
+          size="square"
           onClick={() => onChange(clamp(value - step))}
           aria-label={`decrease ${label}`}
         >
           −
-        </button>
+        </Button>
         <input
           className="w-35 accent-accent"
           type="range"
@@ -289,18 +248,18 @@ function NumberRow({ label, value, min, max, step = 1, unit = "", onChange }: Nu
           value={value}
           onChange={(event) => onChange(clamp(Number(event.target.value)))}
         />
-        <button
-          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/12"
+        <Button
+          size="square"
           onClick={() => onChange(clamp(value + step))}
           aria-label={`increase ${label}`}
         >
           +
-        </button>
+        </Button>
         <span className="min-w-14 text-right font-mono tabular-nums">
           {value}
           {unit}
         </span>
       </div>
-    </Row>
+    </FieldRow>
   );
 }

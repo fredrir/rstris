@@ -71,16 +71,18 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 | `src-tauri/src/commands.rs`  | Tauri IPC commands                                                                          |
 | `src-tauri/src/game_loop.rs` | 250 Hz update thread, emits `game-state` events                                             |
 | `src-tauri/tests/`           | Mirrors `src/` modules                                                                      |
-| `src/lib/`                   | `types`, `ipc`, `keys`, `audio`, `render`, `format`                                         |
 | `src/components/`            | Screens and overlays                                                                        |
+| `src/components/ui/`         | `Button`, `Card`, `Screen`, `Page`, `Overlay`, `Table`, `Toggle`, `FieldRow` primitives     |
+| `src/lib/`                   | `types`, `ipc`, `keys`, `audio`, `render`, `format`, `cx`                                   |
 | `src/styles.css`             | Tailwind entry: `@theme` tokens, keyframes, base layer                                      |
 
 ## Styling
 
-| Item        | Value                                                               |
-| ----------- | ------------------------------------------------------------------- |
-| Engine      | Tailwind CSS 4                                                      |
-| Vite plugin | `@tailwindcss/vite` in `vite.config.ts`                             |
-| Entry       | `src/styles.css` → `@import "tailwindcss"`                          |
-| Tokens      | `@theme`: `--color-*`, `--font-*`, `--animate-*`                    |
-| Components  | Utility classes inline in JSX; shared strings for repeated patterns |
+| Item        | Value                                            |
+| ----------- | ------------------------------------------------ |
+| Engine      | Tailwind CSS 4                                   |
+| Vite plugin | `@tailwindcss/vite` in `vite.config.ts`          |
+| Entry       | `src/styles.css` → `@import "tailwindcss"`       |
+| Tokens      | `@theme`: `--color-*`, `--font-*`, `--animate-*` |
+| Components  | Reusable primitives in `src/components/ui/`      |
+| Class joins | `cx` from `src/lib/cx` for conditional classes   |

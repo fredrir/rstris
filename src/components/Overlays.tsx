@@ -3,25 +3,20 @@ import { useEffect, useState, type FormEvent } from "react";
 import { formatNumber, formatTime } from "../lib/format";
 import type { GameOverInfo, SubmitResult } from "../lib/types";
 import { Menu } from "./Menu";
-
-const OVERLAY = "absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center";
-const OVERLAY_DIM = "bg-[#080a10]/78 animate-fade-in";
-const OVERLAY_TITLE = "font-mono text-[30px] font-bold tracking-[0.2em]";
-const BUTTON =
-  "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10 disabled:cursor-default disabled:opacity-40";
-const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
+import { Button } from "./ui/Button";
+import { Overlay, OverlayTitle } from "./ui/Overlay";
 
 export function CountdownOverlay({ ms }: { ms: number }) {
   const digit = Math.max(1, Math.ceil(ms / 500));
   return (
-    <div className={`${OVERLAY} pointer-events-none`}>
+    <Overlay dim={false} className="pointer-events-none">
       <span
         key={digit}
         className="animate-countdown font-mono text-[96px] font-bold text-ink [text-shadow:0_0_40px_rgb(34_211_238/0.8)]"
       >
         {digit}
       </span>
-    </div>
+    </Overlay>
   );
 }
 
@@ -34,8 +29,8 @@ interface PauseProps {
 
 export function PauseOverlay({ onResume, onRestart, onSettings, onMenu }: PauseProps) {
   return (
-    <div className={`${OVERLAY} ${OVERLAY_DIM}`}>
-      <h2 className={`${OVERLAY_TITLE} text-accent`}>PAUSED</h2>
+    <Overlay>
+      <OverlayTitle>PAUSED</OverlayTitle>
       <Menu
         compact
         items={[
@@ -45,7 +40,7 @@ export function PauseOverlay({ onResume, onRestart, onSettings, onMenu }: PauseP
           { label: "Quit to menu", danger: true, onSelect: onMenu },
         ]}
       />
-    </div>
+    </Overlay>
   );
 }
 
@@ -79,52 +74,48 @@ export function GameOverOverlay({
   }, [needsName, onMenu, onRestart]);
 
   return (
-    <div className={`${OVERLAY} ${OVERLAY_DIM}`}>
-      <h2 className={`${OVERLAY_TITLE} text-danger`}>GAME OVER</h2>
+    <Overlay>
+      <OverlayTitle tone="danger">GAME OVER</OverlayTitle>
       {submitted && info?.rank !== null && (
         <p className="m-0 animate-pulse-soft font-bold tracking-[0.12em] text-gold">
           Saved as #{submitted.rank}
         </p>
       )}
-      {info && (
-        <dl className="m-0 grid grid-cols-[auto_auto] gap-x-4.5 gap-y-1">
-          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
-            Score
-          </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">
-            {formatNumber(info.summary.score)}
-          </dd>
-          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
-            Level
-          </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">{info.summary.level}</dd>
-          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
-            Lines
-          </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">{info.summary.lines}</dd>
-          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
-            Time
-          </dt>
-          <dd className="m-0 text-left font-mono text-lg font-bold">
-            {formatTime(info.summary.durationMs)}
-          </dd>
-        </dl>
-      )}
+      {info && <Summary info={info} />}
       {needsName && info && <NewHighScoreForm info={info} onSubmit={onSubmit} />}
       {!needsName && info && (
-        <>
-          <Menu
-            compact
-            items={[
-              { label: "Play again", onSelect: onRestart },
-              { label: "High scores", onSelect: onScores },
-              { label: "Main menu", onSelect: onMenu },
-            ]}
-          />
-        </>
+        <Menu
+          compact
+          items={[
+            { label: "Play again", onSelect: onRestart },
+            { label: "High scores", onSelect: onScores },
+            { label: "Main menu", onSelect: onMenu },
+          ]}
+        />
       )}
       {!info && <p className="m-0 text-muted">Saving…</p>}
-    </div>
+    </Overlay>
+  );
+}
+
+function Summary({ info }: { info: GameOverInfo }) {
+  const rows = [
+    { label: "Score", value: formatNumber(info.summary.score) },
+    { label: "Level", value: String(info.summary.level) },
+    { label: "Lines", value: String(info.summary.lines) },
+    { label: "Time", value: formatTime(info.summary.durationMs) },
+  ];
+  return (
+    <dl className="m-0 grid grid-cols-[auto_auto] gap-x-4.5 gap-y-1">
+      {rows.map((row) => (
+        <div key={row.label} className="contents">
+          <dt className="self-center text-right text-xs tracking-widest text-muted uppercase">
+            {row.label}
+          </dt>
+          <dd className="m-0 text-left font-mono text-lg font-bold">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -159,9 +150,9 @@ function NewHighScoreForm({
         onChange={(event) => setName(event.target.value)}
         onFocus={(event) => event.target.select()}
       />
-      <button type="submit" className={BUTTON_PRIMARY}>
+      <Button type="submit" variant="primary">
         Save score
-      </button>
+      </Button>
     </form>
   );
 }

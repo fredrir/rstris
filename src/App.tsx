@@ -3,6 +3,7 @@ import { GameScreen } from "./components/GameScreen";
 import { HighScoresScreen } from "./components/HighScoresScreen";
 import { MainMenu } from "./components/MainMenu";
 import { SettingsScreen } from "./components/SettingsScreen";
+import { Page } from "./components/ui/Page";
 import { sfx } from "./lib/audio";
 import { api } from "./lib/ipc";
 import type { Settings } from "./lib/types";
@@ -66,10 +67,10 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="relative flex size-full flex-col gap-4.5 overflow-auto px-9 py-7">
+      <Page>
         <h2 className="text-xl font-bold tracking-wider">Something went wrong</h2>
         <pre className="whitespace-pre-wrap text-danger">{error}</pre>
-      </div>
+      </Page>
     );
   }
   if (!settings)
