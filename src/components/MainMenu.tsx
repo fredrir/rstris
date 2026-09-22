@@ -8,14 +8,28 @@ interface Props {
   onSettings: () => void;
 }
 
+const TITLE_COLORS = [
+  "text-cyan-400",
+  "text-yellow-400",
+  "text-purple-400",
+  "text-green-400",
+  "text-red-400",
+  "text-blue-400",
+  "text-orange-400",
+];
+
 export function MainMenu({ onPlay, onScores, onSettings }: Props) {
   return (
-    <div className="screen main-menu">
+    <div className="relative grid h-full w-full place-items-center">
       <MenuBackdrop />
-      <div className="main-menu-card">
-        <h1 className="title">
+      <div className="relative z-10 flex flex-col items-center gap-4.5 rounded-[20px] border border-white/10 bg-bg/70 px-16 py-11 shadow-[0_30px_80px_rgb(0_0_0/0.5)] backdrop-blur-[6px]">
+        <h1 className="ml-[0.18em] flex font-mono text-7xl font-bold tracking-[0.18em]">
           {"RSTRIS".split("").map((letter, i) => (
-            <span key={i} className={`title-letter c${i % 7}`}>
+            <span
+              key={i}
+              className={`inline-block animate-float ${TITLE_COLORS[i % 7]}`}
+              style={{ animationDelay: `${i * 0.2}s` }}
+            >
               {letter}
             </span>
           ))}

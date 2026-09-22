@@ -66,5 +66,5 @@ export function MenuBackdrop() {
     };
   }, []);
 
-  return <canvas ref={ref} className="backdrop" aria-hidden="true" />;
+  return <canvas ref={ref} className="absolute inset-0 z-0" aria-hidden="true" />;
 }

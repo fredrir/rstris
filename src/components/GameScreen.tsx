@@ -5,7 +5,6 @@ import { useGameState } from "../hooks/useGameState";
 import { sfx } from "../lib/audio";
 import { formatNumber, formatPps, formatTime } from "../lib/format";
 import { api, sendInput } from "../lib/ipc";
-import { keysLabel } from "../lib/keys";
 import type {
   GameEvent,
   GameOverInfo,
@@ -32,6 +31,26 @@ interface Props {
 }
 
 const POPUP_MS = 1300;
+
+const GAME_GRID =
+  "relative grid h-full w-full grid-cols-[200px_minmax(0,1fr)_220px] gap-4.5 p-4.5 max-[1000px]:grid-cols-[170px_minmax(0,1fr)_190px] max-[1000px]:gap-3 max-[1000px]:p-3";
+const PANEL = "flex min-h-0 flex-col gap-3";
+const CARD = "rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3";
+const STAT_LABEL = "text-[11px] uppercase tracking-[0.12em] text-muted";
+const STAT_VALUE = "font-mono font-bold tabular-nums";
+
+function popupTitleClass(tone: Popup["tone"]) {
+  const size = tone === "big" ? "text-[34px]" : "text-[26px]";
+  const color =
+    tone === "big"
+      ? "text-gold"
+      : tone === "spin"
+        ? "text-accent-2"
+        : tone === "level"
+          ? "text-accent"
+          : "text-ink";
+  return `${size} ${color} font-mono font-extrabold tracking-[0.12em]`;
+}
 
 export function GameScreen({
   settings,
@@ -184,56 +203,72 @@ export function GameScreen({
   }, []);
 
   if (!snapshot)
-    return <div className="screen game-screen loading">Starting…</div>;
+    return (
+      <div className="relative grid h-full w-full place-items-center text-muted">
+        Starting…
+      </div>
+    );
 
   const showCountdown = snapshot.countdownMs !== null && !paused && !over;
-  const keys = settings.keys;
 
   return (
-    <div className={`screen game-screen${levelFlash ? " level-flash" : ""}`}>
-      <aside className="panel panel-left">
-        <section className="card">
-          <h3>Hold</h3>
+    <div className={GAME_GRID}>
+      <aside className={PANEL}>
+        <section className={CARD}>
+          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+            Hold
+          </h3>
           <PiecePreview kind={snapshot.hold} dim={!snapshot.holdAvailable} />
         </section>
-        <section className="card stats">
-          <div className="stat">
-            <span className="stat-label">Score</span>
-            <span className="stat-value big">
+        <section className={`${CARD} flex flex-col gap-2`}>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Score</span>
+            <span className={`${STAT_VALUE} text-[26px] text-accent`}>
               {formatNumber(snapshot.score)}
             </span>
           </div>
-          <div className="stat">
-            <span className="stat-label">Level</span>
-            <span className="stat-value">{snapshot.level}</span>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Level</span>
+            <span className={`${STAT_VALUE} text-xl`}>{snapshot.level}</span>
           </div>
-          <div className="stat">
-            <span className="stat-label">Lines</span>
-            <span className="stat-value">{snapshot.lines}</span>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Lines</span>
+            <span className={`${STAT_VALUE} text-xl`}>{snapshot.lines}</span>
           </div>
           <div
-            className="progress"
+            className="h-1.5 overflow-hidden rounded-[3px] bg-white/[0.08]"
             title={`${snapshot.linesToNextLevel} lines to next level`}
           >
             <div
-              className="progress-bar"
+              className="h-full bg-linear-to-r from-accent to-accent-2 transition-[width] duration-[250ms] ease-out"
               style={{ width: `${(10 - snapshot.linesToNextLevel) * 10}%` }}
             />
           </div>
-          <span className="stat-sub">
+          <span className="text-xs text-muted">
             {snapshot.linesToNextLevel} to next level
           </span>
         </section>
       </aside>
 
-      <main className="board-area">
-        <BoardCanvas snapshot={snapshot} className={over ? "over" : ""}>
-          <div className="popups">
+      <main className="flex min-h-0 min-w-0">
+        <BoardCanvas
+          snapshot={snapshot}
+          className={`${over ? "saturate-[0.4]" : ""} ${
+            levelFlash ? "animate-level-glow" : ""
+          }`}
+        >
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {popups.map((popup) => (
-              <div key={popup.id} className={`popup popup-${popup.tone}`}>
-                <span className="popup-title">{popup.title}</span>
+              <div
+                key={popup.id}
+                className="absolute flex animate-popup flex-col items-center gap-0.5 [text-shadow:0_2px_12px_rgb(0_0_0/0.8)]"
+              >
+                <span className={popupTitleClass(popup.tone)}>{popup.title}</span>
                 {popup.lines.map((line) => (
-                  <span key={line} className="popup-line">
+                  <span
+                    key={line}
+                    className="font-mono text-sm tracking-[0.08em] text-accent"
+                  >
                     {line}
                   </span>
                 ))}
@@ -264,12 +299,14 @@ export function GameScreen({
         </BoardCanvas>
       </main>
 
-      <aside className="panel panel-right">
-        <section className="card">
-          <h3>Next</h3>
-          <div className="next-queue">
+      <aside className={PANEL}>
+        <section className={CARD}>
+          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+            Next
+          </h3>
+          <div className="flex flex-col items-center gap-0.5">
             {snapshot.next.length === 0 && (
-              <span className="stat-sub muted">hidden</span>
+              <span className="text-xs text-muted">hidden</span>
             )}
             {snapshot.next.map((kind, i) => (
               <PiecePreview
@@ -280,26 +317,26 @@ export function GameScreen({
             ))}
           </div>
         </section>
-        <section className="card stats">
-          <div className="stat">
-            <span className="stat-label">Time</span>
-            <span className="stat-value mono">
+        <section className={`${CARD} flex flex-col gap-2`}>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Time</span>
+            <span className={`${STAT_VALUE} text-xl`}>
               {formatTime(snapshot.elapsedMs)}
             </span>
           </div>
-          <div className="stat">
-            <span className="stat-label">Pieces</span>
-            <span className="stat-value mono">{snapshot.pieces}</span>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Pieces</span>
+            <span className={`${STAT_VALUE} text-xl`}>{snapshot.pieces}</span>
           </div>
-          <div className="stat">
-            <span className="stat-label">PPS</span>
-            <span className="stat-value mono">
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>PPS</span>
+            <span className={`${STAT_VALUE} text-xl`}>
               {formatPps(snapshot.pieces, snapshot.elapsedMs)}
             </span>
           </div>
-          <div className="stat">
-            <span className="stat-label">Gravity</span>
-            <span className="stat-value mono">{snapshot.gravityMs}ms</span>
+          <div className="flex flex-col">
+            <span className={STAT_LABEL}>Gravity</span>
+            <span className={`${STAT_VALUE} text-xl`}>{snapshot.gravityMs}ms</span>
           </div>
         </section>
       </aside>

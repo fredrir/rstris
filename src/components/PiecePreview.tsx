@@ -29,5 +29,5 @@ export function PiecePreview({ kind, size = 18, dim = false }: Props) {
     });
   }, [kind, size, dim]);
 
-  return <canvas ref={ref} className="piece-preview" />;
+  return <canvas ref={ref} className="block" />;
 }

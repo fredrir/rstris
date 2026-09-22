@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ACTIONS, assignKey, keyLabel, type ActionId } from "../lib/keys";
 import type { Settings } from "../lib/types";
 
@@ -14,6 +14,16 @@ interface Capture {
   id: ActionId;
   slot: number;
 }
+
+const PAGE =
+  "relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7";
+const CARD = "rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3";
+const H3 = "mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted";
+const BUTTON =
+  "cursor-pointer rounded-lg border bg-white/5 px-4 py-2 transition-colors duration-100 hover:bg-white/10";
+const BUTTON_GHOST = `${BUTTON} border-white/10`;
+const BUTTON_PRIMARY = `${BUTTON} border-accent/50 text-accent`;
+const BUTTON_DANGER = `${BUTTON} border-danger/50 text-danger`;
 
 export function SettingsScreen({
   settings,
@@ -78,29 +88,31 @@ export function SettingsScreen({
   };
 
   return (
-    <div className="screen page settings">
-      <header className="page-header">
-        <h2>Settings</h2>
-        <div className="page-actions">
+    <div className={PAGE}>
+      <header className="flex items-center justify-between">
+        <h2 className="font-mono text-[26px] font-bold tracking-[0.16em] text-accent">
+          Settings
+        </h2>
+        <div className="flex gap-2">
           <button
-            className={confirmReset ? "button danger" : "button"}
+            className={confirmReset ? BUTTON_DANGER : BUTTON_GHOST}
             onClick={setReset}
           >
             {confirmReset ? "Confirm reset" : "Reset"}
           </button>
 
-          <button className="button primary" onClick={onBack}>
+          <button className={BUTTON_PRIMARY} onClick={onBack}>
             Back
           </button>
         </div>
       </header>
 
-      <div className="settings-grid">
-        <section className="card">
-          <h3>Player</h3>
+      <div className="grid grid-cols-2 gap-3.5">
+        <section className={CARD}>
+          <h3 className={H3}>Player</h3>
           <Row label="Name">
             <input
-              className="text-input"
+              className="w-[200px] select-text rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 outline-none focus:border-accent"
               maxLength={16}
               value={settings.playerName}
               onChange={(event) => set("playerName", event.target.value)}
@@ -108,8 +120,8 @@ export function SettingsScreen({
           </Row>
         </section>
 
-        <section className="card">
-          <h3>Gameplay</h3>
+        <section className={CARD}>
+          <h3 className={H3}>Gameplay</h3>
           <NumberRow
             label="Start level"
             value={settings.startLevel}
@@ -136,8 +148,8 @@ export function SettingsScreen({
           />
         </section>
 
-        <section className="card">
-          <h3>Handling</h3>
+        <section className={CARD}>
+          <h3 className={H3}>Handling</h3>
           <NumberRow
             label="DAS"
             unit="ms"
@@ -175,8 +187,8 @@ export function SettingsScreen({
           />
         </section>
 
-        <section className="card">
-          <h3>Audio</h3>
+        <section className={CARD}>
+          <h3 className={H3}>Audio</h3>
           <ToggleRow
             label="Sound effects"
             value={settings.soundEnabled}
@@ -193,19 +205,24 @@ export function SettingsScreen({
           />
         </section>
 
-        <section className="card controls-card">
-          <h3>Controls</h3>
-          <div className="controls-rows">
+        <section className={`${CARD} col-span-full`}>
+          <h3 className={H3}>Controls</h3>
+          <div className="grid grid-cols-2 gap-x-10">
             {ACTIONS.map(({ id, label }) => (
               <Row key={id} label={label}>
-                <div className="key-slots">
+                <div className="flex gap-1.5">
                   {[0, 1].map((slot) => {
                     const code = settings.keys[id][slot];
                     const active = capture?.id === id && capture.slot === slot;
                     return (
                       <button
                         key={slot}
-                        className={`key-slot${active ? " capturing" : ""}${code ? "" : " empty"}`}
+                        className={[
+                          "min-w-[82px] cursor-pointer rounded-md border bg-white/5 px-2.5 py-1.25 font-mono",
+                          active
+                            ? "animate-pulse-fast border-accent text-accent"
+                            : `border-white/10 ${code ? "" : "text-muted"}`,
+                        ].join(" ")}
                         onClick={() => setCapture({ id, slot })}
                       >
                         {active ? "press key…" : code ? keyLabel(code) : "+"}
@@ -218,6 +235,8 @@ export function SettingsScreen({
           </div>
         </section>
       </div>
+
+      <footer className="text-xs text-muted">{dbPath}</footer>
     </div>
   );
 }
@@ -227,12 +246,12 @@ function Row({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <div className="row">
-      <span className="row-label">{label}</span>
-      <div className="row-control">{children}</div>
+    <div className="flex items-center justify-between gap-4 py-1">
+      <span className="text-ink">{label}</span>
+      <div className="flex flex-1 items-center justify-end">{children}</div>
     </div>
   );
 }
@@ -249,13 +268,22 @@ function ToggleRow({
   return (
     <Row label={label}>
       <button
-        className={`toggle${value ? " on" : ""}`}
+        className={[
+          "inline-flex cursor-pointer items-center gap-2 rounded-full border py-1 pr-2.5 pl-1",
+          value
+            ? "border-accent/50 text-accent"
+            : "border-white/10 text-muted",
+        ].join(" ")}
         role="switch"
         aria-checked={value}
         onClick={() => onChange(!value)}
       >
-        <span className="toggle-knob" />
-        <span className="toggle-text">{value ? "On" : "Off"}</span>
+        <span
+          className={`size-4.5 rounded-full transition-[background-color,transform] duration-100 ${
+            value ? "bg-accent" : "bg-muted"
+          }`}
+        />
+        <span className="w-6 text-left">{value ? "On" : "Off"}</span>
       </button>
     </Row>
   );
@@ -283,15 +311,16 @@ function NumberRow({
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
   return (
     <Row label={label}>
-      <div className="number-control">
+      <div className="flex items-center gap-2">
         <button
-          className="step"
+          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/[0.12]"
           onClick={() => onChange(clamp(value - step))}
           aria-label={`decrease ${label}`}
         >
           −
         </button>
         <input
+          className="w-[140px] accent-accent"
           type="range"
           min={min}
           max={max}
@@ -300,13 +329,13 @@ function NumberRow({
           onChange={(event) => onChange(clamp(Number(event.target.value)))}
         />
         <button
-          className="step"
+          className="size-6.5 cursor-pointer rounded-md border border-white/10 bg-white/5 transition-colors duration-100 hover:bg-white/[0.12]"
           onClick={() => onChange(clamp(value + step))}
           aria-label={`increase ${label}`}
         >
           +
         </button>
-        <span className="number-value mono">
+        <span className="min-w-14 text-right font-mono tabular-nums">
           {value}
           {unit}
         </span>

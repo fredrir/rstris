@@ -10,6 +10,7 @@ Tetris. Rust engine + SQLite persistence (Tauri 2), React 19 + canvas frontend.
 | Storage | SQLite via `rusqlite` (bundled) + `rusqlite_migration` |
 | Shell | Tauri 2 |
 | UI | React 19, TypeScript, Vite, HTML canvas |
+| Styling | Tailwind CSS 4 (`@tailwindcss/vite`) |
 | Package manager | bun |
 
 ## Commands
@@ -70,3 +71,14 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
 | `src-tauri/tests/` | Mirrors `src/` modules |
 | `src/lib/` | `types`, `ipc`, `keys`, `audio`, `render`, `format` |
 | `src/components/` | Screens and overlays |
+| `src/styles.css` | Tailwind entry: `@theme` tokens, keyframes, base layer |
+
+## Styling
+
+| Item | Value |
+|---|---|
+| Engine | Tailwind CSS 4 |
+| Vite plugin | `@tailwindcss/vite` in `vite.config.ts` |
+| Entry | `src/styles.css` → `@import "tailwindcss"` |
+| Tokens | `@theme`: `--color-*`, `--font-*`, `--animate-*` |
+| Components | Utility classes inline in JSX; shared strings for repeated patterns |

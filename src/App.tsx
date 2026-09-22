@@ -68,13 +68,18 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="screen page">
-        <h2>Something went wrong</h2>
-        <pre className="error">{error}</pre>
+      <div className="relative flex h-full w-full flex-col gap-4.5 overflow-auto px-9 py-7">
+        <h2 className="text-xl font-bold tracking-wider">Something went wrong</h2>
+        <pre className="text-danger whitespace-pre-wrap">{error}</pre>
       </div>
     );
   }
-  if (!settings) return <div className="screen loading">Loading…</div>;
+  if (!settings)
+    return (
+      <div className="relative grid h-full w-full place-items-center text-muted">
+        Loading…
+      </div>
+    );
 
   const settingsView = (
     <SettingsScreen
@@ -107,7 +112,9 @@ export default function App() {
         />
       )}
       {screen === "game" && settingsOverGame && (
-        <div className="modal">{settingsView}</div>
+        <div className="absolute inset-0 z-10 animate-fade-in bg-[#080a10]/96 backdrop-blur-[6px]">
+          {settingsView}
+        </div>
       )}
       {screen === "scores" && (
         <HighScoresScreen highlightId={highlightId} onBack={goMenu} />
